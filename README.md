@@ -16,10 +16,10 @@
     pip install -r requirements.txt
     ```
 
-3.Download new weights or use the default yolov5s.pt
+3. Download new weights or use the default yolov5s.pt
 I already put the `yolov5s.pt` inside. If you need other models, 
 please go to [official site of yolov5](https://github.com/ultralytics/yolov5). 
-and place the downlaoded `.pt` file under `yolov5/weights/`.   
+and place the downloaded `.pt` file under `yolov5/weights/`.
 And I also aready downloaded the deepsort weights. 
 You can also download it from [here](https://drive.google.com/drive/folders/1xhG0kRH1EX5B9_Iz8gQJb7UNnn_riXi6), 
 and place `ckpt.t7` file under `deep_sort/deep/checkpoint/`
