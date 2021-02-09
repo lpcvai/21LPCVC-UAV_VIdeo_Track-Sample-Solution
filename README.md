@@ -46,4 +46,4 @@ python3 track.py --source VIDEOSOURCE --weights yolov5/weights/best.pt --data yo
 2) [Yolov5_DeepSort_Pytorch](https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch)   
 3) [yolov5](https://github.com/ultralytics/yolov5)  
 4) [deep_sort_pytorch](https://github.com/ZQPei/deep_sort_pytorch)       
-5) [deep_sort](https://github.com/nwojke/deep_sort)   
+5) [Simple Online and Realtime Tracking with a Deep Association Metric](https://arxiv.org/abs/1703.07402)
