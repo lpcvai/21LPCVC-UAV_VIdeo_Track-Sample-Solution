@@ -1,0 +1,13 @@
+ballPerson Dataset Stats
+    Train
+        COCO    : 4097      Images with balls and people. Comes from COCO 2017
+        OPENIMGS: 6977      Half balls, half people
+        VIP 0926: 280       Our data from 0926 video annotations
+    Test
+        COCO    : 159
+        OPENIMGS: 984
+        VIP 0926: 60
+
+Model Stats
+    The model was trained using the custom ballPerson dataset. The model is based off of YOLOv5 version 4.0 pretrained yolov5l.pt weights.
+    
