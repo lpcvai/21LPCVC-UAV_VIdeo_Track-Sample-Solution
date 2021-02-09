@@ -11,34 +11,31 @@
     ```
     git clone https://github.com/dual19/Drone-Vision-Spring-2021-Sample-Solution.git
     cd Drone-Vision-Spring-2021-Sample-Solution
+    
     conda activate SampleSolution
     conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
+    
     pip install -r requirements.txt
     ```
+    
+3. The trained weights have been provided. Make sure to use them to get the best detections.
+The trained weights are called `best.pt` and they are under `yolov5/weights/best.pt`.
+The trained weights were created using a dataset containing over 12,000 images. More stats can be found in 'yolov5/weights/stats.txt'
 
-3. Download new weights or use the default yolov5s.pt
-I already put the `yolov5s.pt` inside. If you need other models, 
-please go to [official site of yolov5](https://github.com/ultralytics/yolov5). 
-and place the downloaded `.pt` file under `yolov5/weights/`.
-And I also aready downloaded the deepsort weights. 
-You can also download it from [here](https://drive.google.com/drive/folders/1xhG0kRH1EX5B9_Iz8gQJb7UNnn_riXi6), 
-and place `ckpt.t7` file under `deep_sort/deep/checkpoint/`
+4. The DeepSORT weights are aready downloaded, however they can also be found [here](https://drive.google.com/drive/folders/1xhG0kRH1EX5B9_Iz8gQJb7UNnn_riXi6).
+They should be called `ckpt.t7` and place it under `deep_sort/deep/checkpoint/`
 
 
 ## Run
 ~~~
-# on video file
-python main.py --input_path [VIDEO_FILE_NAME]
+python3 track.py --source VIDEOSOURCE --weights yolov5/weights/best.pt --data yolov5/data/ballPerson.yaml --classes 0 1
 ~~~
 
 
 
 ## References
-1) [DeepSORT_YOLOv5_Pytorch](https://github.com/HowieMa/DeepSORT_YOLOv5_Pytorch)
+1) [Multi-class Yolov5 + Deep Sort with PyTorch](https://github.com/WuPedin/Multi-class_Yolov5_DeepSort_Pytorch)
 2) [Yolov5_DeepSort_Pytorch](https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch)   
 3) [yolov5](https://github.com/ultralytics/yolov5)  
 4) [deep_sort_pytorch](https://github.com/ZQPei/deep_sort_pytorch)       
 5) [deep_sort](https://github.com/nwojke/deep_sort)   
-
-
-Note: please follow the [LICENCE](https://github.com/ultralytics/yolov5/blob/master/LICENSE) of YOLOv5! 
