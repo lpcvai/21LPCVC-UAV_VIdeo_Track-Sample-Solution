@@ -1,6 +1,6 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
 
-## Read before running the new version
+## READ BEFORE RUNNING
 The sample solution has been updated, so it is important that you delete your old conda environment and create a new one following the installation procedure.
 To delete the old environment
 ```
