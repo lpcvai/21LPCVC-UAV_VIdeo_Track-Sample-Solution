@@ -17,11 +17,12 @@
     
     pip install -r requirements.txt
     ```
-
+    
 3. The trained weights have been provided. Make sure to use them to get the best detections.
 The trained weights are called `best.pt` and they are under `yolov5/weights/best.pt`.
 The trained weights were created using a dataset containing over 12,000 images. More stats can be found in 'yolov5/weights/stats.txt'
-The DeepSORT weights are aready downloaded, however they can also be found [here](https://drive.google.com/drive/folders/1xhG0kRH1EX5B9_Iz8gQJb7UNnn_riXi6).
+
+4. The DeepSORT weights are aready downloaded, however they can also be found [here](https://drive.google.com/drive/folders/1xhG0kRH1EX5B9_Iz8gQJb7UNnn_riXi6).
 They should be called `ckpt.t7` and place it under `deep_sort/deep/checkpoint/`
 
 
