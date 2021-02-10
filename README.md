@@ -1,5 +1,6 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
 
+
 ## READ BEFORE RUNNING
 The sample solution has been updated, so it is important that you delete your old conda environment and create a new one following the installation procedure.
 To delete the old environment
@@ -25,22 +26,20 @@ conda env remove -n ENV_NAME
     pip install -r requirements.txt
     ```
     
+    
 3. The trained weights have been provided. Make sure to use them to get the best detections.
 Specific stats about the training session can be viewed [here](https://wandb.ai/dual19/YOLOv5/runs/2hkzouqz?workspace=user-dual19) if you're interested. 
 The trained weights are called `best.pt` and they are under `yolov5/weights/best.pt`.
 The trained weights were created using a dataset containing over 12,000 images. More stats can be found in `yolov5/weights/stats.txt`.
 
+
 4. The DeepSORT weights are aready downloaded, however they can also be found [here](https://drive.google.com/drive/folders/1xhG0kRH1EX5B9_Iz8gQJb7UNnn_riXi6).
 They should be called `ckpt.t7` and place it under `deep_sort/deep/checkpoint/`
 
 
-## Run
-~~~
-python3 track.py --source VIDEOSOURCE --weights yolov5/weights/best.pt --data yolov5/data/ballPerson.yaml --classes 0 1
-~~~
-
 ## Inputs
 1. The first input will be a video. For now, the video is based off of 1108ball07Air1, since it has the most colored balls. The video can be located [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EqojYZ_DQ5ZCooRGxyESHi8Bc8tpHnOUSHJmtBosKqUqTQ?e=rVbHk8).
+
 
 2. The second input is a text file, containing the first 10 frames for the solution to acquire the correct labels. An additional 10 frames will be provided in the middle of the video, to recalibrate the labels if some identity switching occurs. The format for the input file in `inputs/groundtruths.txt` should be similar to the example below. NOTE: The delimiter between each value in the actual text file will be a space, the  is just for visualization. The bounding box coordinate system is based off of the YOLO annotation format. 
 ```
@@ -63,7 +62,9 @@ python3 track.py --source VIDEOSOURCE --weights yolov5/weights/best.pt --data yo
 - Height = absolute_height /image_height
 ```
 
+
 3. The third input is a text file, however it will be empty so we might not need to input it. Will discuss on Monday (2/15)
+
 
 ## Outputs
 1. The only output from the solution should be a text file. This text file will include the location of every ball when a single ball has been caught. The format for the output file in `outputs/catches.txt` should be similar to the example below.
@@ -76,6 +77,13 @@ python3 track.py --source VIDEOSOURCE --weights yolov5/weights/best.pt --data yo
     49  |   0    |   3    |   1   |   2    |   4    |     - Person 1 catches red
     60  |   0    |   3    |   1   |   2    |   5    |     - Person 5 catches blue
 ```
+
+
+## Run
+~~~
+python3 track.py --source VIDEOSOURCE --weights yolov5/weights/best.pt --data yolov5/data/ballPerson.yaml --classes 0 1
+~~~
+
 
 
 ## References
