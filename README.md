@@ -1,7 +1,7 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
 
-
-## READ BEFORE RUNNING
+## Installation 
+### READ BEFORE RUNNING
 The sample solution has been updated, so it is important that you delete your old conda environment and create a new one following the installation procedure.
 To delete the old environment
 ```
@@ -9,7 +9,7 @@ conda env remove -n ENV_NAME
 ```
 
 
-## Prepare 
+### Prepare 
 1. Create a virtual environment and call it SampleSolution
     ```
     conda create --name SampleSolution python=3.8
@@ -36,8 +36,8 @@ The trained weights were created using a dataset containing over 12,000 images. 
 4. The DeepSORT weights are aready downloaded, however they can also be found [here](https://drive.google.com/drive/folders/1xhG0kRH1EX5B9_Iz8gQJb7UNnn_riXi6).
 They should be called `ckpt.t7` and place it under `deep_sort/deep/checkpoint/`
 
-
-## Inputs
+## Input and Output Files
+### Inputs
 1. The first input will be a video. For now, the video is based off of 1108ball07Air1, since it has the most colored balls. The video can be located [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EqojYZ_DQ5ZCooRGxyESHi8Bc8tpHnOUSHJmtBosKqUqTQ?e=rVbHk8).
 
 
@@ -66,7 +66,7 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep/checkpoint/`
 3. The third input is a text file, however it will be empty so we might not need to input it. Will discuss on Monday (2/15)
 
 
-## Outputs
+### Outputs
 1. The only output from the solution should be a text file. This text file will include the location of every ball when a single ball has been caught. The format for the output file in `outputs/catches.txt` should be similar to the example below.
 
 ```
