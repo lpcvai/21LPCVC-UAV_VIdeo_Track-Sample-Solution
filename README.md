@@ -39,6 +39,43 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep/checkpoint/`
 python3 track.py --source VIDEOSOURCE --weights yolov5/weights/best.pt --data yolov5/data/ballPerson.yaml --classes 0 1
 ~~~
 
+## Inputs
+1. The first input will be a video. For now, the video is based off of 1108ball07Air1, since it has the most colored balls. The video can be located [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EqojYZ_DQ5ZCooRGxyESHi8Bc8tpHnOUSHJmtBosKqUqTQ?e=rVbHk8).
+
+2. The second input is a text file, containing the first 10 frames for the solution to acquire the correct labels. An additional 10 frames will be provided in the middle of the video, to recalibrate the labels if some identity switching occurs. The format for the input file in `inputs/groundtruths.txt` should be similar to the example below. NOTE: The delimiter between each value in the actual text file will be a space, the  is just for visualization. The bounding box coordinate system is based off of the YOLO annotation format. 
+```
+  Frame | Class |   ID  |   X   |   Y   | Width | Height|
+----------------------------------------------------------
+    0   |   0   |   1   |0.41015|0.39583|0.02031|0.03425|
+    0   |   0   |   2   |0.36835|0.61990|0.04557|0.18055|
+    0   |   1   |   3   |0.41015|0.39583|0.03593|0.16296|
+    1   |   0   |   1   |0.52942|0.39583|0.02031|0.03425|
+    1   |   0   |   2   |0.36835|0.61990|0.04557|0.18055|
+    1   |   1   |   3   |0.52942|0.39537|0.03593|0.16296|
+
+
+- Frame: The frame number of the annotation
+- Class: 0 for person, 1 for sports ball
+
+- X      = absolute_x / image_width
+- Y      = absolute_y / image_height
+- Width  = absolute_width /image_width
+- Height = absolute_height /image_height
+```
+
+3. The third input is a text file, however it will be empty so we might not need to input it. Will discuss on Monday (2/15)
+
+## Outputs
+1. The only output from the solution should be a text file. This text file will include the location of every ball when a single ball has been caught. The format for the output file in `outputs/catches.txt` should be similar to the example below.
+
+```
+  Frame | Yellow | Orange |  Red  | Purple |  Blue  |
+----------------------------------------------------------
+    5   |   0    |   1    |   5   |   2    |   4    |     - Person 4 catches blue
+    30  |   0    |   3    |   5   |   2    |   4    |     - Person 3 catches orange
+    49  |   0    |   3    |   1   |   2    |   4    |     - Person 1 catches red
+    60  |   0    |   3    |   1   |   2    |   5    |     - Person 5 catches blue
+```
 
 
 ## References
