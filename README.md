@@ -27,10 +27,11 @@ conda env remove -n ENV_NAME
     ```
     
     
-3. The trained weights have been provided. Make sure to use them to get the best detections.
+3. The trained weights are provided [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/Et0ELARoQkFEldFUjBk55qgBKm3RjYAMnGGQozGl9RBEWg?e=XVzu5p).
+The weights are called `best.pt` and should be placed under `yolov5/weights/`.
+Make sure to use them to get the best detections.
+The trained weights were created using a dataset containing over 12,000 images. More stats on the dataset can be found in `yolov5/weights/stats.txt`.
 Specific stats about the training session can be viewed [here](https://wandb.ai/dual19/YOLOv5/runs/2hkzouqz?workspace=user-dual19) if you're interested. 
-The trained weights are called `best.pt` and they are under `yolov5/weights/best.pt`.
-The trained weights were created using a dataset containing over 12,000 images. More stats can be found in `yolov5/weights/stats.txt`.
 
 
 4. The DeepSORT weights are aready downloaded, however they can also be found [here](https://drive.google.com/drive/folders/1xhG0kRH1EX5B9_Iz8gQJb7UNnn_riXi6).
@@ -70,12 +71,12 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep/checkpoint/`
 1. The only output from the solution should be a text file. This text file will include the location of every ball when a single ball has been caught. The format for the output file in `outputs/catches.txt` should be similar to the example below.
 
 ```
-  Frame | Yellow | Orange |  Red  | Purple |  Blue  |
+  Frame | Yellow | Orange |  Red  | Purple |  Blue  | Green |
 ----------------------------------------------------------
-    5   |   0    |   1    |   5   |   2    |   4    |     - Person 4 catches blue
-    30  |   0    |   3    |   5   |   2    |   4    |     - Person 3 catches orange
-    49  |   0    |   3    |   1   |   2    |   4    |     - Person 1 catches red
-    60  |   0    |   3    |   1   |   2    |   5    |     - Person 5 catches blue
+    5   |   0    |   1    |   5   |   2    |   4    |   0    - Person 4 catches blue
+    30  |   0    |   3    |   5   |   2    |   4    |   0    - Person 3 catches orange
+    49  |   0    |   3    |   1   |   2    |   4    |   0    - Person 1 catches red
+    60  |   0    |   3    |   1   |   2    |   5    |   0    - Person 5 catches blue
 ```
 
 
