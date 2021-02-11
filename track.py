@@ -268,5 +268,15 @@ if __name__ == '__main__':
     import torch.backends.cudnn as cudnn
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
+
+    #Color dictonary for ball tracking where red : (lowerbound, upperbound) in bgr values
+    colorDict = {
+        "red" : (0,0)
+
+
+
+
+    }
+    
     with torch.no_grad():
         detect(args, device)
