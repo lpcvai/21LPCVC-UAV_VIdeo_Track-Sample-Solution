@@ -54,7 +54,7 @@ def compute_color_for_labels(label):
     return tuple(color)
 
 
-def draw_boxes(img, bbox, cls_names, scores, identities=None, offset=(0,0)):
+def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offset=(0,0)):
     for i, box in enumerate(bbox):
         x1, y1, x2, y2 = [int(i) for i in box]
         x1 += offset[0]
@@ -69,8 +69,9 @@ def draw_boxes(img, bbox, cls_names, scores, identities=None, offset=(0,0)):
             id = int(id_mapping[identities[i]]) if identities is not None else 0    
         except KeyError:
             id = int(identities[i]) if identities is not None else 0    
+            
         color = compute_color_for_labels(id)
-        label = '%d %s %d' % (id, cls_names[i], scores[i])
+        label = '%s %d %s %d' % (ball_detect[i], id, cls_names[i], scores[i])
         label += '%'
         t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 2 , 2)[0]
         cv2.rectangle(img, (x1, y1),(x2,y2), color, 3)
@@ -228,7 +229,9 @@ def detect(opt, device, save_img=False):
                     clses = outputs[:, 5]
                     scores = outputs[:, 6]
                     stays = outputs[:, 7]
-                    draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, identities)
+                    
+                    ball_detect = detect_catches(im0, bbox_xyxy, clses, identities, colorDict)
+                    draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
 
                     
                     # Print time (inference + NMS)
@@ -296,10 +299,68 @@ if __name__ == '__main__':
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     #Color dictonary for ball tracking where red : (lowerbound, upperbound) in bgr values
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', type=str, default=wghts, help='model.pt path') #Default 'yolov5/weights/yolov5s.pt'
+    parser.add_argument('--data', type=str, default=dta, help='data yaml path') #Default 'yolov5/data/data.yaml'
+    parser.add_argument('--source', type=str, default=src, help='source')  #Default 'inference/images'
+    parser.add_argument('--output', type=str, default='inference/output', help='output folder')  #Output folder
+    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
+    parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
+    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--view-img', action='store_true', help='display results')
+    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--classes', nargs='+', type=int, default=classs, help='filter by class') #Default [0]
+    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
+    parser.add_argument('--augment', action='store_true', help='augmented inference')
+    parser.add_argument("--config_deepsort", type=str, default="deep_sort/configs/deep_sort.yaml")
+    args = parser.parse_args()
+    args.img_size = check_img_size(args.img_size)
+    print(args)
+    
+    # Select GPU
+    device = select_device(args.device)
+    import torch
+    import torch.backends.cudnn as cudnn
+    half = device.type != 'cpu'  # half precision only supported on CUDA
+
+    
+    #Color dictonary for ball tracking where red : [(upper), (lower)] in HSV values
+    #Use https://www.rapidtables.com/web/color/RGB_Color.html for hue 
+    hueOffset = 8
+
+    yellowBGR = np.uint8([[[0,255,255]]])
+    hsv_yellow = cv2.cvtColor(yellowBGR,cv2.COLOR_BGR2HSV)
+    hsv_yellow = hsv_yellow[0][0][0]
+
+    redBGR = np.uint8([[[0,0,255]]])
+    hsv_red = cv2.cvtColor(redBGR,cv2.COLOR_BGR2HSV)
+    hsv_red = hsv_red[0][0][0]
+
+    blueBGR = np.uint8([[[255,0,0]]])
+    hsv_blue = cv2.cvtColor(blueBGR,cv2.COLOR_BGR2HSV)
+    hsv_blue = hsv_blue[0][0][0]
+
+    greenBGR = np.uint8([[[0,128,0]]])
+    hsv_green = cv2.cvtColor(greenBGR,cv2.COLOR_BGR2HSV)
+    hsv_green = hsv_green[0][0][0]
+
+    orangeBGR = np.uint8([[[0,165,255]]])
+    hsv_orange = cv2.cvtColor(orangeBGR,cv2.COLOR_BGR2HSV)
+    hsv_orange = hsv_orange[0][0][0]
+
+    purpleBGR = np.uint8([[[128,0,128]]])
+    hsv_purple = cv2.cvtColor(purpleBGR,cv2.COLOR_BGR2HSV)
+    hsv_purple = hsv_purple[0][0][0]
+
     colorDict = {
-        "red" : (0,0)
-
-
+        "yellow" : [(hsv_yellow + hueOffset, 255, 255), (hsv_yellow - hueOffset, 100, 100)],
+        "red"    : [(hsv_red    + hueOffset, 255, 255), (hsv_red    - hueOffset, 100, 100)],
+        "blue"   : [(hsv_blue   + hueOffset, 255, 255), (hsv_blue   - hueOffset, 100, 100)],
+        "green"  : [(hsv_green  + hueOffset, 255, 255), (hsv_green  - hueOffset, 100, 100)],
+        "orange" : [(hsv_orange + hueOffset, 255, 255), (hsv_orange - hueOffset, 100, 100)],
+        "purple" : [(hsv_purple + hueOffset, 255, 255), (hsv_purple - hueOffset, 100, 100)]
 
 
     }
