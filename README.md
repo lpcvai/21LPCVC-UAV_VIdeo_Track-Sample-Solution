@@ -27,19 +27,19 @@ conda env remove -n ENV_NAME
     ```
     
     
-3. The trained weights are provided [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/Et0ELARoQkFEldFUjBk55qgBKm3RjYAMnGGQozGl9RBEWg?e=XVzu5p).
+3. The trained weights are provided [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EuCYkSRgyXVCh8PwwsHZ9lYBNfI4A4cLgdi5sHIlRSsZCQ?e=yjoJ2P).
 The weights are called `best.pt` and should be placed under `yolov5/weights/`.
 Make sure to use them to get the best detections.
 The trained weights were created using a dataset containing over 12,000 images. More stats on the dataset can be found in `yolov5/weights/stats.txt`.
 Specific stats about the training session can be viewed [here](https://wandb.ai/dual19/YOLOv5/runs/2hkzouqz?workspace=user-dual19) if you're interested. 
 
 
-4. The DeepSORT weights are aready downloaded, however they can also be found [here](https://drive.google.com/drive/folders/1xhG0kRH1EX5B9_Iz8gQJb7UNnn_riXi6).
-They should be called `ckpt.t7` and place it under `deep_sort/deep/checkpoint/`
+4. The DeepSORT weights need to be downloaded; they can be found [here](https://purdue0-my.sharepoint.com/:u:/g/personal/hu440_purdue_edu/EYvoc5gij4dNpcGJ5jnBW94BP5H5LU_dcW0dHtm_lX8aBQ?e=s8j3LW).
+They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/checkpoint/`
 
 ## Input and Output Files
 ### Inputs
-1. The first input will be a video. For now, the video is based off of 1108ball07Air1, since it has the most colored balls. The video can be located [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EqojYZ_DQ5ZCooRGxyESHi8Bc8tpHnOUSHJmtBosKqUqTQ?e=rVbHk8).
+1. The first input will be a video. For now, the video is based off of 1108ball07Air1, since it has the most colored balls. The video can be located [here](https://purdue0-my.sharepoint.com/:u:/g/personal/hu440_purdue_edu/EYvoc5gij4dNpcGJ5jnBW94BP5H5LU_dcW0dHtm_lX8aBQ?e=s8j3LW).
 
 
 2. The second input is a text file, containing the first 10 frames for the solution to acquire the correct labels. An additional 10 frames will be provided in the middle of the video, to recalibrate the labels if some identity switching occurs. The format for the input file in `inputs/groundtruths.txt` should be similar to the example below. NOTE: The delimiter between each value in the actual text file will be a space, the  is just for visualization. The bounding box coordinate system is based off of the YOLO annotation format. 
