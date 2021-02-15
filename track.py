@@ -65,7 +65,10 @@ def draw_boxes(img, bbox, cls_names, scores, identities=None, offset=(0,0)):
         # The following line was problematic. With this labeling should be fixed
         # Contributor YKS
         # id = i + 1
-        id = int(id_mapping[identities[i]]) if identities is not None else 0    
+        try:
+            id = int(id_mapping[identities[i]]) if identities is not None else 0    
+        except KeyError:
+            id = int(identities[i]) if identities is not None else 0    
         color = compute_color_for_labels(id)
         label = '%d %s %d' % (id, cls_names[i], scores[i])
         label += '%'
