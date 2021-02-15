@@ -26,9 +26,11 @@ from deep_sort.utils.parser import get_config
 from deep_sort.deep_sort import DeepSort
 
 import yaml
+import solution
 
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
+id_mapping = {}
 
 
 def bbox_rel(image_width, image_height,  *xyxy):
@@ -60,7 +62,10 @@ def draw_boxes(img, bbox, cls_names, scores, identities=None, offset=(0,0)):
         y1 += offset[1]
         y2 += offset[1]
         # box text and bar
-        id = int(identities[i]) if identities is not None else 0    
+        # The following line was problematic. With this labeling should be fixed
+        # Contributor YKS
+        # id = i + 1
+        id = int(id_mapping[identities[i]]) if identities is not None else 0    
         color = compute_color_for_labels(id)
         label = '%d %s %d' % (id, cls_names[i], scores[i])
         label += '%'
@@ -76,6 +81,8 @@ def detect(opt, device, save_img=False):
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
     
+    frame_num = 0
+
     # Read Class Name Yaml
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.FullLoader)
@@ -191,9 +198,25 @@ def detect(opt, device, save_img=False):
                 confss = torch.Tensor(confs)
                 clses = torch.Tensor(clses)
                 # Pass detections to deepsort
-                outputs = deepsort.update(xywhs, confss, clses, im0)
+                outputs = []
+                groundtruths = solution.load_labels("./inputs/groundtruths.txt",img_w,img_h,frame_num)
+                if (groundtruths.shape[0]==0):
+                    outputs = deepsort.update(xywhs, confss, clses, im0)
+                else:
+                    # print(groundtruths)
+                    xywhs = groundtruths[:,2:]
+                    tensor = torch.tensor((), dtype=torch.int32)
+                    confss = tensor.new_ones((groundtruths.shape[0], 1))
+                    clses = groundtruths[:,0:1]
+                    outputs = deepsort.update(xywhs, confss, clses, im0)
                 t3 = time_synchronized()
-                
+
+                if frame_num == 2:
+                    for DS_ID in xyxy2xywh(outputs[:, :5]):
+                        for real_ID in groundtruths[:,1:].tolist():
+                            if (abs(DS_ID[0]-real_ID[1])/img_w < 0.005) and (abs(DS_ID[1]-real_ID[2])/img_h < 0.005) and (abs(DS_ID[2]-real_ID[3])/img_w < 0.005) and(abs(DS_ID[3]-real_ID[4])/img_w < 0.005):
+                                id_mapping[DS_ID[4]] = int(real_ID[0])
+
                 # draw boxes for visualization
                 if len(outputs) > 0:
                     bbox_tlwh = []
@@ -230,6 +253,7 @@ def detect(opt, device, save_img=False):
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*opt.fourcc), fps, (w, h))
                     vid_writer.write(im0)
+            frame_num += 1
                     
         #print('Inference Time = %.2f' % (time_synchronized() - t1))
         #print('FPS=%.2f' % (1/(time_synchronized() - t1)))
@@ -267,7 +291,6 @@ if __name__ == '__main__':
     import torch
     import torch.backends.cudnn as cudnn
     half = device.type != 'cpu'  # half precision only supported on CUDA
-
 
     #Color dictonary for ball tracking where red : (lowerbound, upperbound) in bgr values
     colorDict = {

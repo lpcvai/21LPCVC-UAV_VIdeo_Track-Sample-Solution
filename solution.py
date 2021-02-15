@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-
+import pandas as pd
+import torch
 
 #Constants
 
@@ -8,29 +9,23 @@ import numpy as np
 
 #Input Functions for Sample Solution
 
+def load_labels(file_name, image_width, image_height, frame_number=-1):
+    '''
+    return pandas DF when frame_number is -1
+    return pytorch tensor when frame_number is a valid frame number
+    '''
+    data = pd.read_csv(file_name, sep=' ')
 
+    data['X'] = data['X'].apply(lambda x: x*image_width)
+    data['Y'] = data['Y'].apply(lambda x: x*image_height)
+    data['Width'] = data['Width'].apply(lambda x: x*image_width)
+    data['Height'] = data['Height'].apply(lambda x: x*image_height)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    if frame_number==-1:
+        return data
+    frame = data[(data["Frame"]==frame_number)]
+    pt_frame = torch.tensor(frame[["Class","ID","X","Y","Width","Height"]].values)
+    return pt_frame
 
 
 
