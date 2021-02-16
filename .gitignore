@@ -4,3 +4,4 @@ inference/*
 *.mp4
 test.ipynb
 __pycache__/*
+*.vscode
