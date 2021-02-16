@@ -232,8 +232,23 @@ def detect(opt, device, save_img=False):
                     
                     ball_detect = solution.detect_catches(im0, bbox_xyxy, clses, identities, colorDict)
                     draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
-
-                    
+                    diction = {}
+                    for i in outputs:
+                        diction[i[4]] = [(i[0] + i[2])/2, (i[1] + i[3])/2, i[2] - i[0],i[3] - i[1], i[5], i[4], i[7]]
+                    collisions = {}
+                    for entry in diction:
+                        xcenter = diction[entry][0]
+                        ycenter = diction[entry][1]
+                        x_range = (xcenter - diction[entry][2]/2 , xcenter + diction[entry][2]/2 )
+                        y_range = (ycenter - diction[entry][3]/2 , xcenter + diction[entry][3]/2 )
+                        for collider in diction:
+                            colliderx = diction[collider][0]
+                            collidery = diction[collider][1]
+                            if entry != collider:
+                                if colliderx > x_range[0] and colliderx < x_range[1] and collidery > y_range[0] and collidery < y_range[1] :
+                                    if (diction[collider][4]) :
+                                        collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
+                    print(collisions)
                     # Print time (inference + NMS)
             #print('%sDone. (%.3fs)' % (s, t2 - t1))
             print('FPS=%.2f' % (1/(t3 - t1)))
