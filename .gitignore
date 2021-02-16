@@ -3,3 +3,4 @@ inference/*
 *.m4v
 *.mp4
 test.ipynb
+__pycache__/*
