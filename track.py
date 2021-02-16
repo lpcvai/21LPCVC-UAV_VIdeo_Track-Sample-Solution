@@ -86,6 +86,7 @@ def detect(opt, device, save_img=False):
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
     
     frame_num = 0
+    fpses = []
 
     # Read Class Name Yaml
     with open(opt.data) as f:
@@ -213,7 +214,7 @@ def detect(opt, device, save_img=False):
                     confss = tensor.new_ones((groundtruths.shape[0], 1))
                     clses = groundtruths[:,0:1]
                     outputs = deepsort.update(xywhs, confss, clses, im0)
-                t3 = time_synchronized()
+                
 
                 if frame_num == 2:
                     for DS_ID in xyxy2xywh(outputs[:, :5]):
@@ -223,20 +224,21 @@ def detect(opt, device, save_img=False):
 
                 # draw boxes for visualization
                 if len(outputs) > 0:
-                    bbox_tlwh = []
                     bbox_xyxy = outputs[:, :4]
                     identities = outputs[:, 4]
                     clses = outputs[:, 5]
                     scores = outputs[:, 6]
-                    stays = outputs[:, 7]
                     
                     ball_detect = solution.detect_catches(im0, bbox_xyxy, clses, identities, colorDict)
+                    
                     draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
 
                     
-                    # Print time (inference + NMS)
-            #print('%sDone. (%.3fs)' % (s, t2 - t1))
-            print('FPS=%.2f' % (1/(t3 - t1)))
+            
+            t3 = time_synchronized()
+            fps = (1/(t3 - t1))
+            fpses.append(fps)
+            print('FPS=%.2f' % fps)
 
             # Stream results
             if view_img:
@@ -263,6 +265,9 @@ def detect(opt, device, save_img=False):
                     
         #print('Inference Time = %.2f' % (time_synchronized() - t1))
         #print('FPS=%.2f' % (1/(time_synchronized() - t1)))
+
+    avgFps = (sum(fpses) / len(fpses))
+    print('Average FPS=%.2f' % avgFps)
 
     if save_txt or save_img:
         print('Results saved to %s' % os.getcwd() + os.sep + out)
@@ -361,8 +366,6 @@ if __name__ == '__main__':
         "green"  : [(hsv_green  + hueOffset, 255, 255), (hsv_green  - hueOffset, 100, 100)],
         "orange" : [(hsv_orange + hueOffset, 255, 255), (hsv_orange - hueOffset, 100, 100)],
         "purple" : [(hsv_purple + hueOffset, 255, 255), (hsv_purple - hueOffset, 100, 100)]
-
-
     }
     
     with torch.no_grad():
