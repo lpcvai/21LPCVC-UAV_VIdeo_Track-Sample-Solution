@@ -82,7 +82,7 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 
 ## Run
 ~~~
-python3 track.py --source VIDEOSOURCE --weights yolov5/weights/best.pt --data yolov5/data/ballPerson.yaml --classes 0 1
+python3 track.py --source VIDEOSOURCE
 ~~~
 
 
