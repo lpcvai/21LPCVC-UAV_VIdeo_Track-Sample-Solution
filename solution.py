@@ -34,6 +34,7 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
 #Output Functions for Sample Solution
 def detect_catches(image, bbox_xyxy, classes, ids, colorDict):
     ball_detect = [None] * len(classes)
+    color_id_pairs = []
     bbox_offset = 5
 
     for i in range(len(classes)):
@@ -72,9 +73,11 @@ def detect_catches(image, bbox_xyxy, classes, ids, colorDict):
 
                 if (ball_color <= upper) :
                     if (ball_color >= lower) :
-                        
+                        color_id_pairs.append([color, ball_color])
+
                         txt = "Detected {colr}"
                         ball_detect[i] = txt.format(colr = color)
+                        break
 
     return ball_detect
 

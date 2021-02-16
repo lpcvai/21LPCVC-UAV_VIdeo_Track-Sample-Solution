@@ -333,39 +333,45 @@ if __name__ == '__main__':
     
     #Color dictonary for ball tracking where red : [(upper), (lower)] in HSV values
     #Use https://www.rapidtables.com/web/color/RGB_Color.html for hue 
-    hueOffset = 8
+    hueOffset = 5
+    satOffset = 50
+    valOffset = 50
 
-    yellowBGR = np.uint8([[[0,255,255]]])
-    hsv_yellow = cv2.cvtColor(yellowBGR,cv2.COLOR_BGR2HSV)
-    hsv_yellow = hsv_yellow[0][0][0]
 
-    redBGR = np.uint8([[[0,0,255]]])
-    hsv_red = cv2.cvtColor(redBGR,cv2.COLOR_BGR2HSV)
-    hsv_red = hsv_red[0][0][0]
+    #BGR Values for each color tested
+    yellowBGR = np.uint8([[[157, 255, 249]]])
+    redBGR    = np.uint8([[[131, 147, 225]]])
+    blueBGR   = np.uint8([[[247, 204,  41]]])
+    greenBGR  = np.uint8([[[  0, 128,   0]]])
+    orangeBGR = np.uint8([[[ 80, 151, 236]]])
+    purpleBGR = np.uint8([[[192, 116, 122]]])
 
-    blueBGR = np.uint8([[[255,0,0]]])
-    hsv_blue = cv2.cvtColor(blueBGR,cv2.COLOR_BGR2HSV)
-    hsv_blue = hsv_blue[0][0][0]
 
-    greenBGR = np.uint8([[[0,128,0]]])
-    hsv_green = cv2.cvtColor(greenBGR,cv2.COLOR_BGR2HSV)
-    hsv_green = hsv_green[0][0][0]
+    colorListBGR = [yellowBGR, redBGR, blueBGR, greenBGR, orangeBGR, purpleBGR]
+    colorListHSVTmp = []
+    colorListHSV = []
 
-    orangeBGR = np.uint8([[[0,165,255]]])
-    hsv_orange = cv2.cvtColor(orangeBGR,cv2.COLOR_BGR2HSV)
-    hsv_orange = hsv_orange[0][0][0]
 
-    purpleBGR = np.uint8([[[128,0,128]]])
-    hsv_purple = cv2.cvtColor(purpleBGR,cv2.COLOR_BGR2HSV)
-    hsv_purple = hsv_purple[0][0][0]
+    #Convert BGR to HSV
+    for bgr in colorListBGR:
+        colorListHSVTmp.append(cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV))
+    
+
+    #Create ranges based off offsets
+    for i in range(len(colorListBGR)):
+        hsv = colorListHSVTmp[i][0][0]
+        upper = (hsv[0] + hueOffset, hsv[1] + satOffset, hsv[2] + valOffset)
+        lower = (hsv[0] - hueOffset, hsv[1] - satOffset, hsv[2] - valOffset)
+        colorListHSV.append([upper, lower])
+
 
     colorDict = {
-        "yellow" : [(hsv_yellow + hueOffset, 255, 255), (hsv_yellow - hueOffset, 100, 100)],
-        "red"    : [(hsv_red    + hueOffset, 255, 255), (hsv_red    - hueOffset, 100, 100)],
-        "blue"   : [(hsv_blue   + hueOffset, 255, 255), (hsv_blue   - hueOffset, 100, 100)],
-        "green"  : [(hsv_green  + hueOffset, 255, 255), (hsv_green  - hueOffset, 100, 100)],
-        "orange" : [(hsv_orange + hueOffset, 255, 255), (hsv_orange - hueOffset, 100, 100)],
-        "purple" : [(hsv_purple + hueOffset, 255, 255), (hsv_purple - hueOffset, 100, 100)]
+        "yellow" : [colorListHSV[0][0], colorListHSV[0][1]],
+        "red"    : [colorListHSV[1][0], colorListHSV[1][1]],
+        "blue"   : [colorListHSV[2][0], colorListHSV[2][1]],
+        "green"  : [colorListHSV[3][0], colorListHSV[3][1]],
+        "orange" : [colorListHSV[4][0], colorListHSV[4][1]],
+        "purple" : [colorListHSV[5][0], colorListHSV[5][1]]
     }
     
     with torch.no_grad():
