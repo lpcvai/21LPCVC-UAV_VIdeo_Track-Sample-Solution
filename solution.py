@@ -2,8 +2,11 @@ import cv2
 import numpy as np
 import pandas as pd
 import torch
+import csv
 
 #Constants
+current_file_name = ''
+current_file_data = None
 
 
 
@@ -11,19 +14,41 @@ import torch
 
 def load_labels(file_name, image_width, image_height, frame_number=-1):
     '''
-    return pandas DF when frame_number is -1
-    return pytorch tensor when frame_number is a valid frame number
-    '''
-    data = pd.read_csv(file_name, sep=' ')
+    Author: 
+        Ziteng Jiao
 
-    data['X'] = data['X'].apply(lambda x: x*image_width)
-    data['Y'] = data['Y'].apply(lambda x: x*image_height)
-    data['Width'] = data['Width'].apply(lambda x: x*image_width)
-    data['Height'] = data['Height'].apply(lambda x: x*image_height)
+    Parameter:
+        file_name:      path to the label file. groundtruths.txt
+        image_width:    the width of image (video frame)
+        image_height:   the height of image (video frame)
+        frame_number:   the specific frame number that we want
+                        if we want the whole label table the this should be -1
+                        the default value is -1
+    Return:
+        When frame_number is -1:
+            type:       pandas DataFrame 
+            content:    all labels
+            format:     ["Frame", "Class","ID","X","Y","Width","Height"]
+        When frame_number is not -1:
+            type:       pytorch tensor
+            content:    coordinates of objects in the requested frame 
+                        empty tensor if the requested frame doesn't exist in the label file
+            format:     ["Class","ID","X","Y","Width","Height"]
+    '''
+    # data = pd.read_csv(file_name, sep=' ')
+    global current_file_name
+    global current_file_data
+    if file_name != current_file_name:
+        current_file_name = file_name
+        current_file_data = pd.read_csv(current_file_name, sep=' ')
+        current_file_data['X'] = current_file_data['X'].apply(lambda x: x*image_width)
+        current_file_data['Y'] = current_file_data['Y'].apply(lambda x: x*image_height)
+        current_file_data['Width'] = current_file_data['Width'].apply(lambda x: x*image_width)
+        current_file_data['Height'] = current_file_data['Height'].apply(lambda x: x*image_height)
 
     if frame_number==-1:
-        return data
-    frame = data[(data["Frame"]==frame_number)]
+        return current_file_data
+    frame = current_file_data[(current_file_data["Frame"]==frame_number)]
     pt_frame = torch.tensor(frame[["Class","ID","X","Y","Width","Height"]].values)
     return pt_frame
 
@@ -32,89 +57,184 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
 
 
 #Output Functions for Sample Solution
-def detect_catches(image, bbox_xyxy, classes, ids, colorDict):
-    ball_detect = [None] * len(classes)
-    detected_balls = {}
+def detect_catches(image, bbox_xyxy, classes, ids, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder):
+    #Create a list of bbox centers and ranges
+    bbox_XYranges = bbox_xyxy2XYranges(bbox_xyxy)
+    
+
+    #Detect the color of each ball and return a dictionary matching id to color
+    detected_ball_colors = detect_colors(image, bbox_XYranges, classes, ids, colorDict)
+
+    #Detect collison between balls and people
+    collisions = detect_collisions(classes, ids, frame_num, bbox_XYranges, detected_ball_colors)
+
+    #Update dictionary pairs
+    frame_catch_pairs, ball_person_pairs = update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pairs, colorOrder)
+    bbox_strings = format_bbox_strings(ids, classes, detected_ball_colors, collisions)
+
+    return (bbox_strings, frame_catch_pairs, ball_person_pairs)
+
+
+def detect_colors(image, bbox_XYranges, classes, ids, colorDict):
+    detected_ball_colors = {}
     bbox_offset = 5
 
     for i in range(len(classes)):
-        ball_detect[i] = ''
 
         #Checks if the class is a ball (1)
         if (classes[i] == 1): 
-            
-            xmin = int(bbox_xyxy[i][0])
-            ymin = int(bbox_xyxy[i][1])
-            xmax = int(bbox_xyxy[i][2])
-            ymax = int(bbox_xyxy[i][3])
-
-            #Get center of bounding box
-            X = int(((xmax - xmin) / 2) + xmin)
-            Y = int(((ymax - ymin) / 2) + ymin)
-
-
             #Extract region of interest HSV values
             #Image values are (height, width, colorchannels)
+            X = bbox_XYranges[i][0]
+            Y = bbox_XYranges[i][1]
             roi_bgr = image[(Y - bbox_offset):(Y + bbox_offset), (X - bbox_offset):(X + bbox_offset)]
+
 
             #Convert BGR image to HSV image
             roi_hsv = cv2.cvtColor(roi_bgr, cv2.COLOR_BGR2HSV)
             hue  = np.mean(roi_hsv[:,:,0])
             sat = np.mean(roi_hsv[:,:,1])
             val   = np.mean(roi_hsv[:,:,2])
+            ball_color = (hue, sat, val)
 
 
             #Check if the color is in a specified range
-            ball_color = (hue, sat, val)
-
             for color in colorDict:
                 upper = colorDict[color][0]
                 lower = colorDict[color][1]
 
                 if (ball_color <= upper) :
                     if (ball_color >= lower) :
-                        detected_balls[color] = [X,Y]
-
-                        txt = "Detected {colr}"
-                        ball_detect[i] = txt.format(colr = color)
+                        detected_ball_colors[ids[i]] = [color, bbox_XYranges[i][0], bbox_XYranges[i][1]]
                         break
 
-    return ball_detect
+    return detected_ball_colors
 
 
+def bbox_xyxy2XYranges(bbox_xyxy):
+    bbox_XYranges = []
+
+    #Create list of bbox centers and ranges
+    for box in bbox_xyxy:
+        #Get bbox corners
+        xmin = int(box[0])
+        ymin = int(box[1])
+        xmax = int(box[2])
+        ymax = int(box[3])
+
+        #Get center of bounding box
+        X = int(((xmax - xmin) / 2) + xmin)
+        Y = int(((ymax - ymin) / 2) + ymin)
+
+        #Create a range for collison detection
+        X_range = (X - ((xmax - xmin) / 2), X + ((xmax - xmin) / 2))
+        Y_range = (Y - ((ymax - ymin) / 2), Y + ((ymax - ymin) / 2))
+
+        bbox_XYranges.append([X, Y, X_range, Y_range])
+
+    return bbox_XYranges
 
 
-#Collision Detector
+def format_bbox_strings(ids, classes, detected_ball_colors, collisions):
+    bbox_strings = [None] * len(classes)
 
-def detect_collisions(outputs):
+    for i in range(len(classes)):
+        #Person bbox info
+        if (ids[i] in collisions):
+            color = collisions[ids[i]]
+            txt = 'Holding {color}'.format(color = color)
 
-    #diction format {id: [xcenter, ycenter, bboxwidth, bboxheight, class, identity, something}
-    diction = {}
+        #Ball bbox info    
+        elif (ids[i] in detected_ball_colors):
+            color = detected_ball_colors[ids[i]][0]
+            txt = 'Detected {color}'.format(color = color)
 
-    for i in outputs:
-        diction[i[4]] = [(i[0] + i[2])/2, (i[1] + i[3])/2, i[2] - i[0],i[3] - i[1], i[5], i[4], i[7]]
+        else:
+            txt = ''
 
+        bbox_strings[i] = txt
+
+    return bbox_strings
+
+
+def detect_collisions(classes, ids, frame_num, bbox_XYranges, detected_ball_colors):
+    #collisions = {'id' : color, ....}
     collisions = {}
-    for entry in diction:
-        xcenter = diction[entry][0]
-        ycenter = diction[entry][1]
-        x_range = (xcenter - diction[entry][2]/2 , xcenter + diction[entry][2]/2 )
-        y_range = (ycenter - diction[entry][3]/2 , xcenter + diction[entry][3]/2 )
+
+    for i in range(len(classes)):
+        #Check if a person
+        if (classes[i] == 0):
+
+            #Get persons bbox range
+            person_X_range = bbox_XYranges[i][2]
+            person_Y_range = bbox_XYranges[i][3]
+
+            #Check if the center of a ball is in a persons bounding box
+            #detected_ball_colors = {'id' : [color, X, Y], ...}
+            for ball in detected_ball_colors:
+                ball_color = detected_ball_colors[ball][0]
+                ball_X = detected_ball_colors[ball][1]
+                ball_Y = detected_ball_colors[ball][2]
+
+                if (ball_X >= person_X_range[0] and ball_X <= person_X_range[1] and ball_Y >= person_Y_range[0] and ball_Y <= person_Y_range[1]):
+                    collisions[ids[i]] = ball_color
+                    break
+
+    return collisions
 
 
-        for collider in diction:
-            colliderx = diction[collider][0]
-            collidery = diction[collider][1]
-            if entry != collider:
-                if colliderx > x_range[0] and colliderx < x_range[1] and collidery > y_range[0] and collidery < y_range[1] :
-                    if (diction[collider][4]) :
-                        collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
+def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pairs, colorOrder):
+    updateFrames = 0
+
+    for person in collisions:
+        color = collisions[person]
+        tmp = {}
+        #Ball color has not been held yet
+        if (color not in ball_person_pairs):
+            ball_person_pairs[color] = person
+
+        #Ball is held by a new person 
+        elif (ball_person_pairs[color] != person):
+            ball_person_pairs[color] = person
+            updateFrames = 1
+
+    if (updateFrames):
+        tmp = ''
+        for color in colorOrder:
+            tmp = tmp + str(ball_person_pairs[color]) + ' '
+        frame_catch_pairs.append([frame_num, tmp])
+
+    return (frame_catch_pairs, ball_person_pairs)
+
+
+def write_catches(output_path, frame_catch_pairs, colorOrder):
     
-    return(collisions)
+    #TEXTOutput
+    '''
+    with open(output_path, 'w') as fileout:
+        for i in range(len(frame_catch_pairs)):
+            frame = frame_catch_pairs[i][0]
+            pairs = frame_catch_pairs[i][1]
+
+            outstring = str(frame) + ' ' + pairs + '\n'
+            fileout.write(outstring)
+    '''
+
+    #CSVOutput
+    colorOrder.insert(0, "frame")
+    with open('./outputs/catch.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter='|', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(colorOrder)
+        for i in range(len(frame_catch_pairs)):
+            frame = frame_catch_pairs[i][0]
+            pairs = frame_catch_pairs[i][1].split(' ')
+            pairs.insert(0, frame)
+            writer.writerow(pairs)
+            
 
 
-def output_results(ball_detect, collisions, IDs, colorDict, frame_num):
-    f = open("./outputs/catches.txt", "a")
+def output_results(ball_detect, collisions, IDs, colorDict, frame_num, output_path):
+    f = open(output_path, "a")
     IDtoColor = {}
     for color in ball_detect:
         if(color != ''):
@@ -135,5 +255,14 @@ def output_results(ball_detect, collisions, IDs, colorDict, frame_num):
     
     f.close()
     pass
+
+
+        
+    
+        
+
+
+
+
 
 
