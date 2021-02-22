@@ -32,7 +32,7 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
 
 
 #Output Functions for Sample Solution
-def detect_catches(image, bbox_xyxy, classes, ids, frame_num, colorDict, frame_catch_pairs, ball_person_pairs):
+def detect_catches(image, bbox_xyxy, classes, ids, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder):
     #Create a list of bbox centers and ranges
     bbox_XYranges = bbox_xyxy2XYranges(bbox_xyxy)
     
@@ -44,12 +44,10 @@ def detect_catches(image, bbox_xyxy, classes, ids, frame_num, colorDict, frame_c
     collisions = detect_collisions(classes, ids, frame_num, bbox_XYranges, detected_ball_colors)
 
     #Update dictionary pairs
-    frame_catch_pairs, ball_person_pairs = update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pairs)
+    frame_catch_pairs, ball_person_pairs = update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pairs, colorOrder)
     bbox_strings = format_bbox_strings(ids, classes, detected_ball_colors, collisions)
 
     return (bbox_strings, frame_catch_pairs, ball_person_pairs)
-
-
 
 
 def detect_colors(image, bbox_XYranges, classes, ids, colorDict):
@@ -118,7 +116,7 @@ def format_bbox_strings(ids, classes, detected_ball_colors, collisions):
     for i in range(len(classes)):
         #Person bbox info
         if (ids[i] in collisions):
-            color = collisions[ids[i]][0]
+            color = collisions[ids[i]]
             txt = 'Holding {color}'.format(color = color)
 
         #Ball bbox info    
@@ -160,10 +158,12 @@ def detect_collisions(classes, ids, frame_num, bbox_XYranges, detected_ball_colo
     return collisions
 
 
-def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pairs):
+def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pairs, colorOrder):
+    updateFrames = 0
+
     for person in collisions:
         color = collisions[person]
-
+        tmp = {}
         #Ball color has not been held yet
         if (color not in ball_person_pairs):
             ball_person_pairs[color] = person
@@ -171,14 +171,29 @@ def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pair
         #Ball is held by a new person 
         elif (ball_person_pairs[color] != person):
             ball_person_pairs[color] = person
-            frame_catch_pairs.append([frame_num, ball_person_pairs])
+            updateFrames = 1
 
-            print([frame_num, ball_person_pairs])
+    if (updateFrames):
+        tmp = ''
+        for color in colorOrder:
+            tmp = tmp + str(ball_person_pairs[color]) + ' '
+        frame_catch_pairs.append([frame_num, tmp])
 
     return (frame_catch_pairs, ball_person_pairs)
 
 
+def write_catches(output_path, frame_catch_pairs):
 
+    with open(output_path, 'w') as fileout:
+        for i in range(len(frame_catch_pairs)):
+            frame = frame_catch_pairs[i][0]
+            pairs = frame_catch_pairs[i][1]
+
+            outstring = str(frame) + ' ' + pairs + '\n'
+            fileout.write(outstring)
+
+
+        
     
         
 
