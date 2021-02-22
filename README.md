@@ -64,8 +64,6 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 ```
 
 
-3. The third input is a text file, however it will be empty so we might not need to input it. Will discuss on Monday (2/15)
-
 
 ### Outputs
 1. The only output from the solution should be a text file. This text file will include the location of every ball when a single ball has been caught. The format for the output file in `outputs/catches.txt` should be similar to the example below.
