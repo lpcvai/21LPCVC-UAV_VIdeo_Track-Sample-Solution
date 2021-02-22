@@ -27,6 +27,7 @@ from deep_sort.deep_sort import DeepSort
 
 import yaml
 import solution
+from solution import output_results
 
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
@@ -248,7 +249,8 @@ def detect(opt, device, save_img=False):
                                 if colliderx > x_range[0] and colliderx < x_range[1] and collidery > y_range[0] and collidery < y_range[1] :
                                     if (diction[collider][4]) :
                                         collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
-                    print(collisions)
+                    
+                    output_results(ball_detect, collisions, identities, colorDict, frame_num)
                    
 
             #Inference Time
@@ -390,6 +392,13 @@ if __name__ == '__main__':
         "orange" : [colorListHSV[4][0], colorListHSV[4][1]],
         "purple" : [colorListHSV[5][0], colorListHSV[5][1]]
     }
+
+    f = open("./outputs/catches.txt", "w")
+    f.write(" Frame | ")
+    for color in colorDict:
+        f.write(color.capitalize() + " | ")
+    f.write("\n----------------------------------------------------------\n")
+    f.close()
     
     with torch.no_grad():
         detect(args, device)

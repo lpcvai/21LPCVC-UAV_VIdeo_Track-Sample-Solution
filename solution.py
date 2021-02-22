@@ -73,7 +73,7 @@ def detect_catches(image, bbox_xyxy, classes, ids, colorDict):
 
                 if (ball_color <= upper) :
                     if (ball_color >= lower) :
-                        detected_balls{color} = [X,Y,]
+                        detected_balls[color] = [X,Y]
 
                         txt = "Detected {colr}"
                         ball_detect[i] = txt.format(colr = color)
@@ -109,7 +109,31 @@ def detect_collisions(outputs):
                 if colliderx > x_range[0] and colliderx < x_range[1] and collidery > y_range[0] and collidery < y_range[1] :
                     if (diction[collider][4]) :
                         collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
-    print(collisions)
-        
+    
+    return(collisions)
+
+
+def output_results(ball_detect, collisions, IDs, colorDict, frame_num):
+    f = open("./outputs/catches.txt", "a")
+    IDtoColor = {}
+    for color in ball_detect:
+        if(color != ''):
+            IDtoColor[color.split(' ')[1]] = IDs[ball_detect.index(color)]
+
+    f.write(f'{frame_num} | ')
+    #frame_number = collisions
+    for ball in colorDict:
+        print(ball + " ", end='')
+        item = IDtoColor.get(ball)
+
+        if item:
+            f.write(f'{item}  | ')
+        else:
+            f.write("0 | ")
+
+    f.write("\n")
+    
+    f.close()
+    pass
 
 
