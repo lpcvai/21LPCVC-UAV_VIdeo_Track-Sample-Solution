@@ -85,8 +85,18 @@ def detect(opt, device, save_img=False):
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
     
+
+    colorOrder = ['red', 'purple', 'blue', 'green', 'yellow', 'orange']
     frame_num = 0
+    framestr = 'Frame {frame}'
     fpses = []
+    frame_catch_pairs = []
+    ball_person_pairs = {}
+
+    for color in colorDict:
+        ball_person_pairs[color] = 0
+
+    
 
     # Read Class Name Yaml
     with open(opt.data) as f:
@@ -235,36 +245,23 @@ def detect(opt, device, save_img=False):
                     clses = outputs[:, 5]
                     scores = outputs[:, 6]
                     
-                    ball_detect = solution.detect_catches(im0, bbox_xyxy, clses, identities, colorDict)
+                    ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, identities, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder)
                     
                     draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
-                    diction = {}
-                    for i in outputs:
-                        diction[i[4]] = [(i[0] + i[2])/2, (i[1] + i[3])/2, i[2] - i[0],i[3] - i[1], i[5], i[4], i[7]]
-                    collisions = {}
-                    for entry in diction:
-                        xcenter = diction[entry][0]
-                        ycenter = diction[entry][1]
-                        x_range = (xcenter - diction[entry][2]/2 , xcenter + diction[entry][2]/2 )
-                        y_range = (ycenter - diction[entry][3]/2 , xcenter + diction[entry][3]/2 )
-                        for collider in diction:
-                            colliderx = diction[collider][0]
-                            collidery = diction[collider][1]
-                            if entry != collider:
-                                if colliderx > x_range[0] and colliderx < x_range[1] and collidery > y_range[0] and collidery < y_range[1] :
-                                    if (diction[collider][4]) :
-                                        collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
-                    print(collisions)
-                    # Print time (inference + NMS)
-            #print('%sDone. (%.3fs)' % (s, t2 - t1))
-            # print('FPS=%.2f' % (1/(t3 - t1)))
 
-                    
-            
+
+            #Draw frame number
+            tmp = framestr.format(frame = frame_num)
+            t_size = cv2.getTextSize(tmp, cv2.FONT_HERSHEY_PLAIN, 2 , 2)[0]
+            cv2.putText(im0, tmp, (0, (t_size[1] + 10)), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
+
+
+            #Inference Time
             t3 = time_synchronized()
             fps = (1/(t3 - t1))
             fpses.append(fps)
             print('FPS=%.2f' % fps)
+            
 
             # Stream results
             if view_img:
@@ -294,6 +291,9 @@ def detect(opt, device, save_img=False):
 
     avgFps = (sum(fpses) / len(fpses))
     print('Average FPS=%.2f' % avgFps)
+
+    outpath = 'outputs/catches.txt'
+    solution.write_catches(outpath, frame_catch_pairs)
 
     if save_txt or save_img:
         print('Results saved to %s' % os.getcwd() + os.sep + out)
@@ -392,12 +392,12 @@ if __name__ == '__main__':
 
 
     colorDict = {
-        "yellow" : [colorListHSV[0][0], colorListHSV[0][1]],
         "red"    : [colorListHSV[1][0], colorListHSV[1][1]],
+        "purple" : [colorListHSV[5][0], colorListHSV[5][1]],
         "blue"   : [colorListHSV[2][0], colorListHSV[2][1]],
         "green"  : [colorListHSV[3][0], colorListHSV[3][1]],
-        "orange" : [colorListHSV[4][0], colorListHSV[4][1]],
-        "purple" : [colorListHSV[5][0], colorListHSV[5][1]]
+        "yellow" : [colorListHSV[0][0], colorListHSV[0][1]],
+        "orange" : [colorListHSV[4][0], colorListHSV[4][1]],  
     }
     
     with torch.no_grad():
