@@ -6,3 +6,4 @@ test.ipynb
 __pycache__/*
 *.vscode
 
+outputs/*
