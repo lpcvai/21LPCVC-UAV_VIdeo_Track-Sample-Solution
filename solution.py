@@ -33,59 +33,109 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
 
 #Output Functions for Sample Solution
 def detect_catches(image, bbox_xyxy, classes, ids, colorDict):
-    ball_detect = [None] * len(classes)
-    detected_balls = {}
+    
+    bbox_strings = [None] * len(classes)
+    bbox_XYranges = bbox_xyxy2XYranges(bbox_xyxy)
+    
+
+
+    #Detect the color of each ball and return a dictionary matching id to color
+    detected_ball_colors = detect_colors(image, bbox_XYranges, classes, ids, colorDict)
+
+
+    bbox_strings = format_bbox_strings(ids, classes, detected_ball_colors)
+
+    return bbox_strings
+
+
+
+
+def detect_colors(image, bbox_XYranges, classes, ids, colorDict):
+    detected_ball_colors = {}
     bbox_offset = 5
 
     for i in range(len(classes)):
-        ball_detect[i] = ''
 
         #Checks if the class is a ball (1)
         if (classes[i] == 1): 
-            
-            xmin = int(bbox_xyxy[i][0])
-            ymin = int(bbox_xyxy[i][1])
-            xmax = int(bbox_xyxy[i][2])
-            ymax = int(bbox_xyxy[i][3])
-
-            #Get center of bounding box
-            X = int(((xmax - xmin) / 2) + xmin)
-            Y = int(((ymax - ymin) / 2) + ymin)
-
-
             #Extract region of interest HSV values
             #Image values are (height, width, colorchannels)
+            X = bbox_XYranges[i][0]
+            Y = bbox_XYranges[i][1]
             roi_bgr = image[(Y - bbox_offset):(Y + bbox_offset), (X - bbox_offset):(X + bbox_offset)]
+
 
             #Convert BGR image to HSV image
             roi_hsv = cv2.cvtColor(roi_bgr, cv2.COLOR_BGR2HSV)
             hue  = np.mean(roi_hsv[:,:,0])
             sat = np.mean(roi_hsv[:,:,1])
             val   = np.mean(roi_hsv[:,:,2])
+            ball_color = (hue, sat, val)
 
 
             #Check if the color is in a specified range
-            ball_color = (hue, sat, val)
-
             for color in colorDict:
                 upper = colorDict[color][0]
                 lower = colorDict[color][1]
 
                 if (ball_color <= upper) :
                     if (ball_color >= lower) :
-                        detected_balls{color} = [X,Y,]
-
-                        txt = "Detected {colr}"
-                        ball_detect[i] = txt.format(colr = color)
+                        detected_ball_colors[ids[i]] = [color, bbox_XYranges[i][0], bbox_XYranges[i][1], bbox_XYranges[i][2], bbox_XYranges[i][3]]
                         break
 
-    return ball_detect
+    return detected_ball_colors
+
+
+def bbox_xyxy2XYranges(bbox_xyxy):
+    bbox_XYranges = []
+
+    #Create list of bbox centers and ranges
+    for box in bbox_xyxy:
+        #Get bbox corners
+        xmin = int(box[0])
+        ymin = int(box[1])
+        xmax = int(box[2])
+        ymax = int(box[3])
+
+        #Get center of bounding box
+        X = int(((xmax - xmin) / 2) + xmin)
+        Y = int(((ymax - ymin) / 2) + ymin)
+
+        #Create a range for collison detection
+        X_range = (X - ((xmax - xmin) / 2), X + ((xmax - xmin) / 2))
+        Y_range = (Y - ((ymax - ymin) / 2), Y + ((ymax - ymin) / 2))
+
+        bbox_XYranges.append([X, Y, X_range, Y_range])
+
+    return bbox_XYranges
+
+
+def format_bbox_strings(ids, classes, detected_ball_colors):
+    bbox_strings = [None] * len(classes)
+
+    for i in range(len(classes)):
+
+        #Person bbox info
+        if (classes[i] == 0):
+            txt = ''
+
+        #Ball bbox info    
+        elif (ids[i] in detected_ball_colors):
+            color = detected_ball_colors[ids[i]][0]
+            txt = 'Detected {color}'.format(color = color)
+
+        else:
+            txt = ''
+
+        bbox_strings[i] = txt
+
+    return bbox_strings
+
 
 
 
 
 #Collision Detector
-
 def detect_collisions(outputs):
 
     #diction format {id: [xcenter, ycenter, bboxwidth, bboxheight, class, identity, something}
@@ -111,5 +161,9 @@ def detect_collisions(outputs):
                         collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
     print(collisions)
         
+
+
+
+
 
 
