@@ -227,8 +227,10 @@ def detect(opt, device, save_img=False):
                 
 
                 if frame_num >= 2:
-                    for DS_ID in xyxy2xywh(outputs[:, :5]):
-                        for real_ID in groundtruths[:,1:].tolist():
+                    # print(outputs)
+                    # print(xyxy2xywh(outputs[:, :5]))
+                    for real_ID in groundtruths[:,1:].tolist():
+                        for DS_ID in xyxy2xywh(outputs[:, :5]):
                             if (abs(DS_ID[0]-real_ID[1])/img_w < 0.005) and (abs(DS_ID[1]-real_ID[2])/img_h < 0.005) and (abs(DS_ID[2]-real_ID[3])/img_w < 0.005) and(abs(DS_ID[3]-real_ID[4])/img_w < 0.005):
                                 id_mapping[DS_ID[4]] = int(real_ID[0])
                                 # try:
