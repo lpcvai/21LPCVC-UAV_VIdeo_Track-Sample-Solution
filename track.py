@@ -247,7 +247,15 @@ def detect(opt, device, save_img=False):
                     clses = outputs[:, 5]
                     scores = outputs[:, 6]
                     
-                    ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, identities, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder)
+                    #Temp solution to get correct id's 
+                    mapped_id_list = []
+                    for ids in identities:
+                        if(ids in id_mapping):
+                            mapped_id_list.append(id_mapping[ids])
+                        else:
+                            mapped_id_list.append(ids)
+
+                    ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder)
                     
                     draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
 
@@ -304,33 +312,6 @@ def detect(opt, device, save_img=False):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='yolov5/weights/yolov5s.pt', help='model.pt path')
-    parser.add_argument('--data', type=str, default='yolov5/data/data.yaml', help='data yaml path') # Class names
-    parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
-    parser.add_argument('--output', type=str, default='inference/output', help='output folder')  # output folder
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
-    parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='display results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    # class 0 is person
-    parser.add_argument('--classes', nargs='+', type=int, default=[0], help='filter by class')
-    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--augment', action='store_true', help='augmented inference')
-    parser.add_argument("--config_deepsort", type=str, default="deep_sort/configs/deep_sort.yaml")
-    args = parser.parse_args()
-    args.img_size = check_img_size(args.img_size)
-    print(args)
-    
-    # Select GPU
-    device = select_device(args.device)
-    import torch
-    import torch.backends.cudnn as cudnn
-    half = device.type != 'cpu'  # half precision only supported on CUDA
-
     #Color dictonary for ball tracking where red : (lowerbound, upperbound) in bgr values
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5/weights/best.pt', help='model.pt path')
