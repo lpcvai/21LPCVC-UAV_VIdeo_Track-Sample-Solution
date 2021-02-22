@@ -27,7 +27,6 @@ from deep_sort.deep_sort import DeepSort
 
 import yaml
 import solution
-from solution import output_results
 
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
