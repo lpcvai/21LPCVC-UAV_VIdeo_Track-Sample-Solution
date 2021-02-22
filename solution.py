@@ -4,6 +4,8 @@ import pandas as pd
 import torch
 
 #Constants
+current_file_name = ''
+current_file_data = None
 
 
 
@@ -11,19 +13,41 @@ import torch
 
 def load_labels(file_name, image_width, image_height, frame_number=-1):
     '''
-    return pandas DF when frame_number is -1
-    return pytorch tensor when frame_number is a valid frame number
-    '''
-    data = pd.read_csv(file_name, sep=' ')
+    Author: 
+        Ziteng Jiao
 
-    data['X'] = data['X'].apply(lambda x: x*image_width)
-    data['Y'] = data['Y'].apply(lambda x: x*image_height)
-    data['Width'] = data['Width'].apply(lambda x: x*image_width)
-    data['Height'] = data['Height'].apply(lambda x: x*image_height)
+    Parameter:
+        file_name:      path to the label file. groundtruths.txt
+        image_width:    the width of image (video frame)
+        image_height:   the height of image (video frame)
+        frame_number:   the specific frame number that we want
+                        if we want the whole label table the this should be -1
+                        the default value is -1
+    Return:
+        When frame_number is -1:
+            type:       pandas DataFrame 
+            content:    all labels
+            format:     ["Frame", "Class","ID","X","Y","Width","Height"]
+        When frame_number is not -1:
+            type:       pytorch tensor
+            content:    coordinates of objects in the requested frame 
+                        empty tensor if the requested frame doesn't exist in the label file
+            format:     ["Class","ID","X","Y","Width","Height"]
+    '''
+    # data = pd.read_csv(file_name, sep=' ')
+    global current_file_name
+    global current_file_data
+    if file_name != current_file_name:
+        current_file_name = file_name
+        current_file_data = pd.read_csv(current_file_name, sep=' ')
+        current_file_data['X'] = current_file_data['X'].apply(lambda x: x*image_width)
+        current_file_data['Y'] = current_file_data['Y'].apply(lambda x: x*image_height)
+        current_file_data['Width'] = current_file_data['Width'].apply(lambda x: x*image_width)
+        current_file_data['Height'] = current_file_data['Height'].apply(lambda x: x*image_height)
 
     if frame_number==-1:
-        return data
-    frame = data[(data["Frame"]==frame_number)]
+        return current_file_data
+    frame = current_file_data[(current_file_data["Frame"]==frame_number)]
     pt_frame = torch.tensor(frame[["Class","ID","X","Y","Width","Height"]].values)
     return pt_frame
 
