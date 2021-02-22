@@ -208,7 +208,7 @@ def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pair
 
 
 def write_catches(output_path, frame_catch_pairs, colorOrder):
-    
+
     #TEXTOutput
     '''
     with open(output_path, 'w') as fileout:
@@ -230,31 +230,6 @@ def write_catches(output_path, frame_catch_pairs, colorOrder):
             pairs = frame_catch_pairs[i][1].split(' ')
             pairs.insert(0, frame)
             writer.writerow(pairs)
-            
-
-
-def output_results(ball_detect, collisions, IDs, colorDict, frame_num, output_path):
-    f = open(output_path, "a")
-    IDtoColor = {}
-    for color in ball_detect:
-        if(color != ''):
-            IDtoColor[color.split(' ')[1]] = IDs[ball_detect.index(color)]
-
-    f.write(f'{frame_num} | ')
-    #frame_number = collisions
-    for ball in colorDict:
-        print(ball + " ", end='')
-        item = IDtoColor.get(ball)
-
-        if item:
-            f.write(f'{item}  | ')
-        else:
-            f.write("0 | ")
-
-    f.write("\n")
-    
-    f.close()
-    pass
 
 
         
