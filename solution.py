@@ -34,7 +34,7 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
 #Output Functions for Sample Solution
 def detect_catches(image, bbox_xyxy, classes, ids, colorDict):
     ball_detect = [None] * len(classes)
-    color_id_pairs = []
+    detected_balls = {}
     bbox_offset = 5
 
     for i in range(len(classes)):
@@ -73,7 +73,7 @@ def detect_catches(image, bbox_xyxy, classes, ids, colorDict):
 
                 if (ball_color <= upper) :
                     if (ball_color >= lower) :
-                        color_id_pairs.append([color, ball_color])
+                        detected_balls{color} = [X,Y,]
 
                         txt = "Detected {colr}"
                         ball_detect[i] = txt.format(colr = color)
@@ -84,47 +84,32 @@ def detect_catches(image, bbox_xyxy, classes, ids, colorDict):
 
 
 
+#Collision Detector
+
+def detect_collisions(outputs):
+
+    #diction format {id: [xcenter, ycenter, bboxwidth, bboxheight, class, identity, something}
+    diction = {}
+
+    for i in outputs:
+        diction[i[4]] = [(i[0] + i[2])/2, (i[1] + i[3])/2, i[2] - i[0],i[3] - i[1], i[5], i[4], i[7]]
+
+    collisions = {}
+    for entry in diction:
+        xcenter = diction[entry][0]
+        ycenter = diction[entry][1]
+        x_range = (xcenter - diction[entry][2]/2 , xcenter + diction[entry][2]/2 )
+        y_range = (ycenter - diction[entry][3]/2 , xcenter + diction[entry][3]/2 )
 
 
-
-
-
-
-def create_ballDict(colorDict):
-    ballDict = {}
-    
-    for color in colorDict.keys:
-        ballDict[color] = Ball(color)
-    return ballDict
-
-
-
-def update_colored_ball(ballDict, colorDict, x1, x2, y1, y2):
-    #1. Get color in the center of the bbox
-
-    #2. Compare returned color to ranges in colorDict
-
-    #3. Update specific ball in ballDict
-    ballDict[color].update_closest()
-
-
-    return
-
-
-
-#Ball class
-class Ball : 
-    ballDict = {}
-
-    def __init__(self, color):
-        self.color = color
-        self.closestPerson = 0
-
-    def update_ballDict(self):
-        return
-
-    def update_closest(self, bbox_xywh):
-        return
+        for collider in diction:
+            colliderx = diction[collider][0]
+            collidery = diction[collider][1]
+            if entry != collider:
+                if colliderx > x_range[0] and colliderx < x_range[1] and collidery > y_range[0] and collidery < y_range[1] :
+                    if (diction[collider][4]) :
+                        collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
+    print(collisions)
         
 
 

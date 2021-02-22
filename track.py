@@ -249,12 +249,9 @@ def detect(opt, device, save_img=False):
                                     if (diction[collider][4]) :
                                         collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
                     print(collisions)
-                    # Print time (inference + NMS)
-            #print('%sDone. (%.3fs)' % (s, t2 - t1))
-            print('FPS=%.2f' % (1/(t3 - t1)))
+                   
 
-                    
-            
+            #Inference Time
             t3 = time_synchronized()
             fps = (1/(t3 - t1))
             fpses.append(fps)
