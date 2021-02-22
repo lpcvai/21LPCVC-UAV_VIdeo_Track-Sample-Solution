@@ -303,7 +303,7 @@ def detect(opt, device, save_img=False):
     avgFps = (sum(fpses) / len(fpses))
     print('Average FPS=%.2f' % avgFps)
 
-    outpath = 'outputs/catches.txt'
+    outpath = 'outputs/catches.csv'
     solution.write_catches(outpath, frame_catch_pairs, colorOrder)
 
     if save_txt or save_img:
@@ -313,12 +313,11 @@ def detect(opt, device, save_img=False):
 
 
 if __name__ == '__main__':
-    #Color dictonary for ball tracking where red : (lowerbound, upperbound) in bgr values
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5/weights/best.pt', help='model.pt path')
     parser.add_argument('--data', type=str, default='yolov5/data/ballPerson.yaml', help='data yaml path')
     parser.add_argument('--source', type=str, default='inference/images', help='source')
-    parser.add_argument('--output', type=str, default='inference/output', help='output folder')
+    parser.add_argument('--output', type=str, default='outputs', help='output folder')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')

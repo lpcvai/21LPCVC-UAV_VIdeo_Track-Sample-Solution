@@ -208,22 +208,9 @@ def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pair
 
 
 def write_catches(output_path, frame_catch_pairs, colorOrder):
-
-    #TEXTOutput
-    '''
-    with open(output_path, 'w') as fileout:
-        for i in range(len(frame_catch_pairs)):
-            frame = frame_catch_pairs[i][0]
-            pairs = frame_catch_pairs[i][1]
-
-            outstring = str(frame) + ' ' + pairs + '\n'
-            fileout.write(outstring)
-    '''
-
-    #CSVOutput
     colorOrder.insert(0, "frame")
-    with open('./outputs/catch.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, delimiter='|', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    with open(output_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=' ', quotechar=' ', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(colorOrder)
         for i in range(len(frame_catch_pairs)):
             frame = frame_catch_pairs[i][0]
@@ -231,7 +218,7 @@ def write_catches(output_path, frame_catch_pairs, colorOrder):
             pairs.insert(0, frame)
             writer.writerow(pairs)
 
-
+    return
         
     
         
