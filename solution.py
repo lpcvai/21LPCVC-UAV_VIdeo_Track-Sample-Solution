@@ -32,20 +32,22 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
 
 
 #Output Functions for Sample Solution
-def detect_catches(image, bbox_xyxy, classes, ids, colorDict):
-    
-    bbox_strings = [None] * len(classes)
+def detect_catches(image, bbox_xyxy, classes, ids, frame_num, colorDict, frame_catch_pairs, ball_person_pairs):
+    #Create a list of bbox centers and ranges
     bbox_XYranges = bbox_xyxy2XYranges(bbox_xyxy)
     
-
 
     #Detect the color of each ball and return a dictionary matching id to color
     detected_ball_colors = detect_colors(image, bbox_XYranges, classes, ids, colorDict)
 
+    #Detect collison between balls and people
+    collisions = detect_collisions(classes, ids, frame_num, bbox_XYranges, detected_ball_colors)
 
-    bbox_strings = format_bbox_strings(ids, classes, detected_ball_colors)
+    #Update dictionary pairs
+    frame_catch_pairs, ball_person_pairs = update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pairs)
+    bbox_strings = format_bbox_strings(ids, classes, detected_ball_colors, collisions)
 
-    return bbox_strings
+    return (bbox_strings, frame_catch_pairs, ball_person_pairs)
 
 
 
@@ -80,7 +82,7 @@ def detect_colors(image, bbox_XYranges, classes, ids, colorDict):
 
                 if (ball_color <= upper) :
                     if (ball_color >= lower) :
-                        detected_ball_colors[ids[i]] = [color, bbox_XYranges[i][0], bbox_XYranges[i][1], bbox_XYranges[i][2], bbox_XYranges[i][3]]
+                        detected_ball_colors[ids[i]] = [color, bbox_XYranges[i][0], bbox_XYranges[i][1]]
                         break
 
     return detected_ball_colors
@@ -110,14 +112,14 @@ def bbox_xyxy2XYranges(bbox_xyxy):
     return bbox_XYranges
 
 
-def format_bbox_strings(ids, classes, detected_ball_colors):
+def format_bbox_strings(ids, classes, detected_ball_colors, collisions):
     bbox_strings = [None] * len(classes)
 
     for i in range(len(classes)):
-
         #Person bbox info
-        if (classes[i] == 0):
-            txt = ''
+        if (ids[i] in collisions):
+            color = collisions[ids[i]][0]
+            txt = 'Holding {color}'.format(color = color)
 
         #Ball bbox info    
         elif (ids[i] in detected_ball_colors):
@@ -132,34 +134,52 @@ def format_bbox_strings(ids, classes, detected_ball_colors):
     return bbox_strings
 
 
-
-
-
-#Collision Detector
-def detect_collisions(outputs):
-
-    #diction format {id: [xcenter, ycenter, bboxwidth, bboxheight, class, identity, something}
-    diction = {}
-
-    for i in outputs:
-        diction[i[4]] = [(i[0] + i[2])/2, (i[1] + i[3])/2, i[2] - i[0],i[3] - i[1], i[5], i[4], i[7]]
-
+def detect_collisions(classes, ids, frame_num, bbox_XYranges, detected_ball_colors):
+    #collisions = {'id' : color, ....}
     collisions = {}
-    for entry in diction:
-        xcenter = diction[entry][0]
-        ycenter = diction[entry][1]
-        x_range = (xcenter - diction[entry][2]/2 , xcenter + diction[entry][2]/2 )
-        y_range = (ycenter - diction[entry][3]/2 , xcenter + diction[entry][3]/2 )
+
+    for i in range(len(classes)):
+        #Check if a person
+        if (classes[i] == 0):
+
+            #Get persons bbox range
+            person_X_range = bbox_XYranges[i][2]
+            person_Y_range = bbox_XYranges[i][3]
+
+            #Check if the center of a ball is in a persons bounding box
+            #detected_ball_colors = {'id' : [color, X, Y], ...}
+            for ball in detected_ball_colors:
+                ball_color = detected_ball_colors[ball][0]
+                ball_X = detected_ball_colors[ball][1]
+                ball_Y = detected_ball_colors[ball][2]
+
+                if (ball_X >= person_X_range[0] and ball_X <= person_X_range[1] and ball_Y >= person_Y_range[0] and ball_Y <= person_Y_range[1]):
+                    collisions[ids[i]] = ball_color
+                    break
+
+    return collisions
 
 
-        for collider in diction:
-            colliderx = diction[collider][0]
-            collidery = diction[collider][1]
-            if entry != collider:
-                if colliderx > x_range[0] and colliderx < x_range[1] and collidery > y_range[0] and collidery < y_range[1] :
-                    if (diction[collider][4]) :
-                        collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
-    print(collisions)
+def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pairs):
+    for person in collisions:
+        color = collisions[person]
+
+        #Ball color has not been held yet
+        if (color not in ball_person_pairs):
+            ball_person_pairs[color] = person
+
+        #Ball is held by a new person 
+        elif (ball_person_pairs[color] != person):
+            ball_person_pairs[color] = person
+            frame_catch_pairs.append([frame_num, ball_person_pairs])
+
+            print([frame_num, ball_person_pairs])
+
+    return (frame_catch_pairs, ball_person_pairs)
+
+
+
+    
         
 
 

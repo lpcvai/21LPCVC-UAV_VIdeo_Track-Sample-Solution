@@ -85,8 +85,16 @@ def detect(opt, device, save_img=False):
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
     
+
     frame_num = 0
     fpses = []
+    frame_catch_pairs = []
+    ball_person_pairs = {}
+
+    for color in colorDict:
+        ball_person_pairs[color] = -1
+
+    
 
     # Read Class Name Yaml
     with open(opt.data) as f:
@@ -229,9 +237,15 @@ def detect(opt, device, save_img=False):
                     clses = outputs[:, 5]
                     scores = outputs[:, 6]
                     
-                    ball_detect = solution.detect_catches(im0, bbox_xyxy, clses, identities, colorDict)
+                    ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, identities, frame_num, colorDict, frame_catch_pairs, ball_person_pairs)
                     
                     draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
+
+
+
+
+
+                    '''
                     diction = {}
                     for i in outputs:
                         diction[i[4]] = [(i[0] + i[2])/2, (i[1] + i[3])/2, i[2] - i[0],i[3] - i[1], i[5], i[4], i[7]]
@@ -249,7 +263,7 @@ def detect(opt, device, save_img=False):
                                     if (diction[collider][4]) :
                                         collisions[diction[collider][5]] = [diction[entry][6], diction[entry][5]]
                     print(collisions)
-                   
+                    '''
 
             #Inference Time
             t3 = time_synchronized()
@@ -383,12 +397,12 @@ if __name__ == '__main__':
 
 
     colorDict = {
-        "yellow" : [colorListHSV[0][0], colorListHSV[0][1]],
         "red"    : [colorListHSV[1][0], colorListHSV[1][1]],
+        "purple" : [colorListHSV[5][0], colorListHSV[5][1]],
         "blue"   : [colorListHSV[2][0], colorListHSV[2][1]],
         "green"  : [colorListHSV[3][0], colorListHSV[3][1]],
-        "orange" : [colorListHSV[4][0], colorListHSV[4][1]],
-        "purple" : [colorListHSV[5][0], colorListHSV[5][1]]
+        "yellow" : [colorListHSV[0][0], colorListHSV[0][1]],
+        "orange" : [colorListHSV[4][0], colorListHSV[4][1]],  
     }
     
     with torch.no_grad():
