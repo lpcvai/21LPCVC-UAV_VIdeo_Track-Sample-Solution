@@ -301,7 +301,7 @@ def detect(opt, device, save_img=False):
         #print('FPS=%.2f' % (1/(time_synchronized() - t1)))
 
     avgFps = (sum(fpses) / len(fpses))
-    print('Average FPS=%.2f' % avgFps)
+    print('Average FPS = %.2f' % avgFps)
 
     outpath = 'outputs/catches.csv'
     solution.write_catches(outpath, frame_catch_pairs, colorOrder)
