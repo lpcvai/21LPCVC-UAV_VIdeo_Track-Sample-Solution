@@ -303,7 +303,9 @@ def detect(opt, device, save_img=False):
     print('Average FPS = %.2f' % avgFps)
 
     
-    outpath = out + '/' + os.path.basename(source) + '.csv'
+    outpath = os.path.basename(source)
+    outpath = outpath[:-4]
+    outpath = out + '/' + outpath + '_out.csv'
     solution.write_catches(outpath, frame_catch_pairs, colorOrder)
 
     if save_txt or save_img:
