@@ -31,6 +31,7 @@ import solution
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 id_mapping = {}
+groundtruths_path = None
 
 
 def bbox_rel(image_width, image_height,  *xyxy):
@@ -214,32 +215,30 @@ def detect(opt, device, save_img=False):
                 clses = torch.Tensor(clses)
                 # Pass detections to deepsort
                 outputs = []
-                groundtruths = solution.load_labels("./inputs/groundtruths.txt",img_w,img_h,frame_num)
-                if (groundtruths.shape[0]==0):
-                    outputs = deepsort.update(xywhs, confss, clses, im0)
+                global groundtruths_path
+                if not 'disable' in groundtruths_path:
+                    # print('\nenabled', groundtruths_path)
+                    groundtruths = solution.load_labels(groundtruths_path, img_w,img_h, frame_num)
+                    if (groundtruths.shape[0]==0):
+                        outputs = deepsort.update(xywhs, confss, clses, im0)
+                    else:
+                        # print(groundtruths)
+                        xywhs = groundtruths[:,2:]
+                        tensor = torch.tensor((), dtype=torch.int32)
+                        confss = tensor.new_ones((groundtruths.shape[0], 1))
+                        clses = groundtruths[:,0:1]
+                        outputs = deepsort.update(xywhs, confss, clses, im0)
+                    
+                    
+                    if frame_num >= 2:
+                        for real_ID in groundtruths[:,1:].tolist():
+                            for DS_ID in xyxy2xywh(outputs[:, :5]):
+                                if (abs(DS_ID[0]-real_ID[1])/img_w < 0.005) and (abs(DS_ID[1]-real_ID[2])/img_h < 0.005) and (abs(DS_ID[2]-real_ID[3])/img_w < 0.005) and(abs(DS_ID[3]-real_ID[4])/img_w < 0.005):
+                                    id_mapping[DS_ID[4]] = int(real_ID[0])
                 else:
-                    # print(groundtruths)
-                    xywhs = groundtruths[:,2:]
-                    tensor = torch.tensor((), dtype=torch.int32)
-                    confss = tensor.new_ones((groundtruths.shape[0], 1))
-                    clses = groundtruths[:,0:1]
+                    # print('\ndisabled', groundtruths_path)
                     outputs = deepsort.update(xywhs, confss, clses, im0)
-                
-                
-                if frame_num >= 2:
-                    # print(outputs)
-                    # print(xyxy2xywh(outputs[:, :5]))
-                    for real_ID in groundtruths[:,1:].tolist():
-                        for DS_ID in xyxy2xywh(outputs[:, :5]):
-                            if (abs(DS_ID[0]-real_ID[1])/img_w < 0.005) and (abs(DS_ID[1]-real_ID[2])/img_h < 0.005) and (abs(DS_ID[2]-real_ID[3])/img_w < 0.005) and(abs(DS_ID[3]-real_ID[4])/img_w < 0.005):
-                                id_mapping[DS_ID[4]] = int(real_ID[0])
-                                # try:
-                                #     if id_mapping[DS_ID[4]] != int(real_ID[0]):
-                                #         # value contradiction                                        
-                                # except KeyError:
-                                #     # not exist in the dictonary
-                                #     id_mapping[DS_ID[4]] = int(real_ID[0])
-                
+
 
                 # draw boxes for visualization
                 if len(outputs) > 0:
@@ -329,9 +328,12 @@ if __name__ == '__main__':
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument("--config_deepsort", type=str, default="deep_sort/configs/deep_sort.yaml")
+    parser.add_argument('--groundtruths', default='./inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
     args = parser.parse_args()
     args.img_size = check_img_size(args.img_size)
     print(args)
+
+    groundtruths_path = args.groundtruths
     
     # Select GPU
     device = select_device(args.device)
