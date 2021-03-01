@@ -214,7 +214,7 @@ def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pair
 def write_catches(output_path, frame_catch_pairs, colorOrder):
     colorOrder.insert(0, "frame")
     with open(output_path, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, delimiter=' ', quotechar=' ', quoting=csv.QUOTE_MINIMAL)
+        writer = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(colorOrder)
         for i in range(len(frame_catch_pairs)):
             frame = frame_catch_pairs[i][0]
