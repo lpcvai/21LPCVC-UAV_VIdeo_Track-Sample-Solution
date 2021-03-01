@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import torch
 import csv
+from os import path
 
 #Constants
 current_file_name = ''
@@ -38,6 +39,9 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
     # data = pd.read_csv(file_name, sep=' ')
     global current_file_name
     global current_file_data
+    if not path.exists(file_name):
+        print("The file", file_name, "doesn't exist.")
+        exit(1)
     if file_name != current_file_name:
         current_file_name = file_name
         current_file_data = pd.read_csv(current_file_name, sep=' ')
