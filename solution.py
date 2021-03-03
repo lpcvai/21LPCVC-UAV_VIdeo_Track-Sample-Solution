@@ -44,7 +44,7 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
         exit(1)
     if file_name != current_file_name:
         current_file_name = file_name
-        current_file_data = pd.read_csv(current_file_name, sep=' ')
+        current_file_data = pd.read_csv(current_file_name, sep=',')
         current_file_data['X'] = current_file_data['X'].apply(lambda x: x*image_width)
         current_file_data['Y'] = current_file_data['Y'].apply(lambda x: x*image_height)
         current_file_data['Width'] = current_file_data['Width'].apply(lambda x: x*image_width)
