@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import torch
 import csv
+import statistics
 from os import path
 
 #Constants
@@ -164,10 +165,12 @@ def format_bbox_strings(ids, classes, detected_ball_colors, collisions):
 def detect_collisions(classes, ids, frame_num, bbox_XYranges, detected_ball_colors):
     #collisions = {'id' : color, ....}
     collisions = {}
+    #maxId = value after maxID is likely not tracked correctly
+    maxId = 8
 
     for i in range(len(classes)):
         #Check if a person
-        if (classes[i] == 0):
+        if ((classes[i] == 0) and (ids[i] < maxId)):
 
             #Get persons bbox range
             person_X_range = bbox_XYranges[i][2]
@@ -180,7 +183,7 @@ def detect_collisions(classes, ids, frame_num, bbox_XYranges, detected_ball_colo
                 ball_X = detected_ball_colors[ball][1]
                 ball_Y = detected_ball_colors[ball][2]
 
-                if (ball_X >= person_X_range[0] and ball_X <= person_X_range[1] and ball_Y >= person_Y_range[0] and ball_Y <= person_Y_range[1]):
+                if (ball_X >= person_X_range[0] and ball_X <= person_X_range[1] and ball_Y >= person_Y_range[0] and ball_Y <= person_Y_range[1] and (ball_color not in collisions.values())):
                     collisions[ids[i]] = ball_color
                     break
 
@@ -216,6 +219,7 @@ def write_catches(output_path, frame_catch_pairs, colorOrder):
     with open(output_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(colorOrder)
+        frame_catch_pairs = smooth_frame_pairs(frame_catch_pairs)
         for i in range(len(frame_catch_pairs)):
             frame = frame_catch_pairs[i][0]
             pairs = frame_catch_pairs[i][1].split(' ')
@@ -225,7 +229,54 @@ def write_catches(output_path, frame_catch_pairs, colorOrder):
     return
         
     
-        
+def smooth_frame_pairs(frame_catch_pairs):
+    max_diff = 5 
+    size = len(frame_catch_pairs)
+    smooth_pairs = []
+
+    i = 0
+    while i < size:
+        frame = frame_catch_pairs[i][0]
+
+        #Check if next item is in range
+        if((i+1) < size):
+            diff = frame_catch_pairs[i+1][0] - frame
+
+            #Check if next frame is close
+            if(diff < max_diff):
+                color_ids = [[],[],[],[],[],[]]
+                tmp_frames = frame_catch_pairs[i:]
+                nxt_i = i
+
+                for cur_frame in tmp_frames:
+                    cur_ids = cur_frame[1][:-1]
+                    cur_ids = cur_ids.split(' ')
+                    cur_dif = cur_frame[0] - frame
+
+                    if(cur_dif < max_diff):
+                        for k in range(len(cur_ids)):
+                            color_ids[k].append(cur_ids[k])
+                        nxt_i = nxt_i + 1
+                    else:
+                        break
+            
+                tmp = ''
+                for j in range(len(color_ids)):
+                    mode = statistics.mode(color_ids[j])
+                    tmp = tmp + mode + ' '
+            
+                i = nxt_i
+                smooth_pairs.append([frame,tmp]) 
+            else:
+                smooth_pairs.append(frame_catch_pairs[i])
+                i = i + 1
+
+        else:
+            smooth_pairs.append(frame_catch_pairs[i])
+            i = i + 1
+
+    return smooth_pairs
+
 
 
 

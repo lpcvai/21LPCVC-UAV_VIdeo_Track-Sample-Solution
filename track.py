@@ -251,13 +251,16 @@ def detect(opt, device, save_img=False):
                     mapped_id_list = []
                     for ids in identities:
                         if(ids in id_mapping):
-                            mapped_id_list.append(id_mapping[ids])
+                            mapped_id_list.append(int(id_mapping[ids]))
                         else:
                             mapped_id_list.append(ids)
 
                     ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder)
                     
+                    t3 = time_synchronized()
                     draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
+                else:
+                    t3 = time_synchronized()
 
 
             #Draw frame number
@@ -267,7 +270,6 @@ def detect(opt, device, save_img=False):
 
 
             #Inference Time
-            t3 = time_synchronized()
             fps = (1/(t3 - t1))
             fpses.append(fps)
             print('FPS=%.2f' % fps)
@@ -347,14 +349,14 @@ if __name__ == '__main__':
     
     #Color dictonary for ball tracking where red : [(upper), (lower)] in HSV values
     #Use https://www.rapidtables.com/web/color/RGB_Color.html for hue 
-    hueOffset = 5
-    satOffset = 50
-    valOffset = 50
+    hueOffset = 4
+    satOffset = 100
+    valOffset = 100
 
 
     #BGR Values for each color tested
     yellowBGR = np.uint8([[[157, 255, 249]]])
-    redBGR    = np.uint8([[[131, 147, 225]]])
+    redBGR    = np.uint8([[[ 95, 111, 208]]])
     blueBGR   = np.uint8([[[247, 204,  41]]])
     greenBGR  = np.uint8([[[ 92, 135,  70]]])
     orangeBGR = np.uint8([[[ 80, 151, 236]]])
