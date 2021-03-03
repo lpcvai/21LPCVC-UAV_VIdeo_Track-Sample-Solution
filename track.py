@@ -356,7 +356,7 @@ if __name__ == '__main__':
     yellowBGR = np.uint8([[[157, 255, 249]]])
     redBGR    = np.uint8([[[131, 147, 225]]])
     blueBGR   = np.uint8([[[247, 204,  41]]])
-    greenBGR  = np.uint8([[[  0, 128,   0]]])
+    greenBGR  = np.uint8([[[ 92, 135,  70]]])
     orangeBGR = np.uint8([[[ 80, 151, 236]]])
     purpleBGR = np.uint8([[[192, 116, 122]]])
 
