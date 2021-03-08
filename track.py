@@ -319,7 +319,7 @@ def detect(opt, device, save_img=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5/weights/best.pt', help='model.pt path')
-    parser.add_argument('--data', type=str, default='yolov5/data/ballPerson.yaml', help='data yaml path')
+    parser.add_argument('--data', type=str, default='ballPerson.yaml', help='data yaml path')
     parser.add_argument('--source', type=str, default='inference/images', help='source')
     parser.add_argument('--output', type=str, default='outputs', help='output folder')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
