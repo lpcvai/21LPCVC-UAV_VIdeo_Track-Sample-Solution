@@ -39,7 +39,7 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 
 ## Input and Output Files
 ### Inputs
-1. The first input will be a video. The sample videos can be located [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EhgD1DpfGhRArmSJDetBQ5wBDdJTxT9djzZG3XTjkeObPw?e=IgBqLE).
+1. The first input will be a video. The sample videos can be located [here](https://drive.google.com/drive/folders/1S6kfqSG8AJpoj-y-4-nIagfmL7FpVTOf?usp=sharing).
 
 
 2. The second input is a csv file, containing the first 10 frames for the solution to acquire the correct labels. An additional 10 frames will be provided in the middle of the video, to recalibrate the labels if some identity switching occurs. The format for the input file in `inputs/"videoname".csv` should be similar to the example below. NOTE: The delimiter between each value in the actual csv file will be a comma (","), the | is just for visualization. The bounding box coordinate system is based off of the YOLO annotation format. 
