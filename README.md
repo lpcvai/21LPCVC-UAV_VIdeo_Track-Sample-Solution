@@ -12,7 +12,7 @@
 2. Clone this repository:
     ```
     git clone --recursive https://github.com/lpcvai/21LPCVC-UAV_VIdeo_Track-Sample-Solution.git
-    cd Drone-Vision-Spring-2021-Sample-Solution
+    cd 21LPCVC-UAV_VIdeo_Track-Sample-Solution
     ```
 3. Install dependencies:    
     ```
