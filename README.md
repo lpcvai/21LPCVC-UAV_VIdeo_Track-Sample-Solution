@@ -1,14 +1,7 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
-
+## News
+- (3/8/2021) Initial release
 ## Installation 
-### READ BEFORE RUNNING
-The sample solution has been updated, so it is important that you delete your old conda environment and create a new one following the installation procedure.
-To delete the old environment
-```
-conda env remove -n ENV_NAME
-```
-
-
 ### Prepare 
 1. Create a virtual environment and call it SampleSolution
     ```
