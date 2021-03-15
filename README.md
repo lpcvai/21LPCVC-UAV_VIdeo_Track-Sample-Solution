@@ -17,7 +17,7 @@ conda env remove -n ENV_NAME
     ```
 2. Clone this repo to install the sample solution:
     ```
-    git clone https://github.com/dual19/Drone-Vision-Spring-2021-Sample-Solution.git
+    git clone https://github.com/lpcvai/21LPCVC-UAV_VIdeo_Track-Sample-Solution.git
     cd Drone-Vision-Spring-2021-Sample-Solution
     
     conda activate SampleSolution
