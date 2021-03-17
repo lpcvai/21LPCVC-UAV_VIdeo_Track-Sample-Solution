@@ -355,12 +355,12 @@ if __name__ == '__main__':
 
 
     #BGR Values for each color tested
-    yellowBGR = np.uint8([[[157, 255, 249]]])
-    redBGR    = np.uint8([[[ 95, 111, 208]]])
-    blueBGR   = np.uint8([[[247, 204,  41]]])
-    greenBGR  = np.uint8([[[ 92, 135,  70]]])
-    orangeBGR = np.uint8([[[ 80, 151, 236]]])
-    purpleBGR = np.uint8([[[192, 116, 122]]])
+    yellowBGR = np.uint8([[[ 81, 205, 217]]])
+    redBGR    = np.uint8([[[ 78,  87, 206]]])
+    blueBGR   = np.uint8([[[197, 137,  40]]])
+    greenBGR  = np.uint8([[[101, 141,  67]]])
+    orangeBGR = np.uint8([[[ 84, 136, 227]]])
+    purpleBGR = np.uint8([[[142,  72,  72]]])
 
 
     colorListBGR = [yellowBGR, redBGR, blueBGR, greenBGR, orangeBGR, purpleBGR]
