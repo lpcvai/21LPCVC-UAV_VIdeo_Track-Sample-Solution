@@ -7,7 +7,7 @@
 ### Prepare
 1. Clone this repository:
     ```
-    git clone --recursive https://github.com/lpcvai/21LPCVC-UAV_VIdeo_Track-Sample-Solution.git
+    git clone --recurse-submodules https://github.com/lpcvai/21LPCVC-UAV_VIdeo_Track-Sample-Solution.git
     cd 21LPCVC-UAV_VIdeo_Track-Sample-Solution
     ```
     
