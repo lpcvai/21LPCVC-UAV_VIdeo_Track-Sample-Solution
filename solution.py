@@ -122,27 +122,36 @@ def check_color(colorDict, area_colors, det_clr):
     return (False, color)
 
 
-def get_roi_colors(image, bbox_XYranges, bbox_offset, cross_size):
-    #Creates a crosshair centered in the bbox with 5 seperate areas
-    num_splits = ((cross_size - 1) * 2) + 4
-
+def get_roi_colors(image, bbox_XYranges, bbox_offset, size, shape):
     X = bbox_XYranges[0]
     Y = bbox_XYranges[1]
+    num_splits = ((size - 1) * 2) + 4
     X_step = int((bbox_XYranges[2][1] - bbox_XYranges[2][0]) / num_splits)
     Y_step = int((bbox_XYranges[3][1] - bbox_XYranges[3][0]) / num_splits)
+    
+    #Creates a crosshair centered in the bbox with 5 seperate areas
+    if (shape == "crosshair"):
+        roi_bgr = []
 
-    #Image values are (height, width, colorchannels)
-    roi_bgr = []
-    for x in range((cross_size * -1), (cross_size + 1)):
-        x1 = (x * X_step) + X
-        y1 = Y
+        for x in range((size * -1), (size + 1)):
+            x1 = (x * X_step) + X
+            y1 = Y
 
-        if (x == 0):
-            for y in range((cross_size * -1), (cross_size + 1)):
+            if (x == 0):
+                for y in range((size * -1), (size + 1)):
+                    y1 = (y * Y_step) + Y
+                    roi_bgr.append(image[(y1 - bbox_offset):(y1 + bbox_offset), (x1 - bbox_offset):(x1 + bbox_offset)])
+            else:
+                roi_bgr.append(image[(y1 - bbox_offset):(y1 + bbox_offset), (x1 - bbox_offset):(x1 + bbox_offset)])
+    elif (shape == "grid"):
+        roi_bgr = []
+
+        for x in range((size * -1), (size + 1)):
+            x1 = (x * X_step) + X
+    
+            for y in range((size * -1), (size + 1)):
                 y1 = (y * Y_step) + Y
                 roi_bgr.append(image[(y1 - bbox_offset):(y1 + bbox_offset), (x1 - bbox_offset):(x1 + bbox_offset)])
-        else:
-            roi_bgr.append(image[(y1 - bbox_offset):(y1 + bbox_offset), (x1 - bbox_offset):(x1 + bbox_offset)])
 
 
     #Convert BGR image to HSV image for each section
