@@ -86,14 +86,14 @@ def detect_colors(image, bbox_XYranges, classes, ids, colorDict):
     detected_ball_colors = {}
     det_clr = []
     bbox_offset = 5
-    cross_size = 2
+    size = 2
 
     for i in range(len(classes)):
 
         #Checks if the class is a ball (1)
         if (classes[i] == 1): 
             #Extract region of interest HSV values
-            area_colors = get_roi_colors(image, bbox_XYranges[i], bbox_offset, cross_size)
+            area_colors = get_roi_colors(image, bbox_XYranges[i], bbox_offset, size, "crosshair")
 
             #Check if the color is in a specified range
             result, color = check_color(colorDict, area_colors, det_clr)
