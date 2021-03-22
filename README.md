@@ -1,41 +1,33 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
+## NOTE: The current release has not been tested on the Raspberry Pi 
+## News
+- (3/8/2021) Initial release
 
 ## Installation 
-### READ BEFORE RUNNING
-The sample solution has been updated, so it is important that you delete your old conda environment and create a new one following the installation procedure.
-To delete the old environment
-```
-conda env remove -n ENV_NAME
-```
-
-
-### Prepare 
-1. Create a virtual environment and call it SampleSolution
+### Prepare
+1. Clone this repository:
     ```
-    conda create --name SampleSolution python=3.8
+    git clone --recurse-submodules https://github.com/lpcvai/21LPCVC-UAV_VIdeo_Track-Sample-Solution.git
+    cd 21LPCVC-UAV_VIdeo_Track-Sample-Solution
+    ```
+    
+2. Create a virtual environment and install it's dependencies:
+    ```
+    conda env create -f environment.yml     
     conda activate SampleSolution
     ```
-2. Clone this repo to install the sample solution:
-    ```
-    git clone https://github.com/dual19/Drone-Vision-Spring-2021-Sample-Solution.git
-    cd Drone-Vision-Spring-2021-Sample-Solution
-    
-    conda activate SampleSolution
-    conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
-    
-    pip install -r requirements.txt
-    ```
-    
-    
-3. The trained weights are provided [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EuCYkSRgyXVCh8PwwsHZ9lYBNfI4A4cLgdi5sHIlRSsZCQ?e=yjoJ2P).
+   
+### Download Pre-trained Models
+1. The trained weights are provided [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EuCYkSRgyXVCh8PwwsHZ9lYBNfI4A4cLgdi5sHIlRSsZCQ?e=yjoJ2P).
 The weights are called `best.pt` and should be placed under `yolov5/weights/`.
 Make sure to use them to get the best detections.
 The trained weights were created using a dataset containing over 12,000 images. More stats on the dataset can be found in `yolov5/weights/stats.txt`.
 Specific stats about the training session can be viewed [here](https://wandb.ai/dual19/YOLOv5/runs/2hkzouqz?workspace=user-dual19) if you're interested. 
 
 
-4. The DeepSORT weights need to be downloaded; they can be found [here](https://purdue0-my.sharepoint.com/:u:/g/personal/hu440_purdue_edu/EYvoc5gij4dNpcGJ5jnBW94BP5H5LU_dcW0dHtm_lX8aBQ?e=s8j3LW).
+2. The DeepSORT weights need to be downloaded; they can be found [here](https://purdue0-my.sharepoint.com/:u:/g/personal/hu440_purdue_edu/EYvoc5gij4dNpcGJ5jnBW94BP5H5LU_dcW0dHtm_lX8aBQ?e=s8j3LW).
 They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/checkpoint/`
+
 
 ## Input and Output Files
 ### Inputs
