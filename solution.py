@@ -5,6 +5,7 @@ import torch
 import csv
 import statistics
 from os import path
+from yolov5.utils.datasets import LoadImages
 
 #Constants
 current_file_name = ''
@@ -277,9 +278,50 @@ def smooth_frame_pairs(frame_catch_pairs):
 
     return smooth_pairs
 
+def generateDynColorDict(groundtruths_path, colorDict, args):
+    dataset = LoadImages(args.source, img_size=args.img_size)
+    frame_num = 0
+    detected_ball_colors = {}
+    bbox_offset = 5
+    for path, img, im0, vid_cap in dataset:
+        img_h, img_w, _ = im0.shape
+        groundtruths = load_labels(groundtruths_path, img_w,img_h, frame_num)
+        if(groundtruths.shape[0] ==0):
+            break
+        
+
+        for i in range(len(groundtruths)):
+            if groundtruths[i][0] == 1:
+                X = groundtruths[i][2]
+                Y = groundtruths[i][3]
+                width = groundtruths[i][4]
+                height = groundtruths[i][5]
+                #extraction = im0[int(Y - height/2):int(Y + height/2), int(X - width/2):int(X + width/2)]
+                roi_bgr = im0[int(Y - bbox_offset):int(Y + bbox_offset), int(X - bbox_offset):int(X + bbox_offset)]
 
 
+                #Convert BGR image to HSV image
+                roi_hsv = cv2.cvtColor(roi_bgr, cv2.COLOR_BGR2HSV)
+                hue  = np.mean(roi_hsv[:,:,0])
+                sat = np.mean(roi_hsv[:,:,1])
+                val   = np.mean(roi_hsv[:,:,2])
+                ball_color = (hue, sat, val)
 
+                for color in colorDict:
+                    upper = colorDict[color][0]
+                    lower = colorDict[color][1]
 
+                    if (ball_color <= upper) :
+                        if (ball_color >= lower) :
+                            if groundtruths[i][1].item() in detected_ball_colors:
+                                detected_ball_colors[groundtruths[i][1].item()].append(color)
+                            else:
+                                detected_ball_colors[groundtruths[i][1].item()] = [color]
+                                print("NEW ENTRY")
+                            break
+        frame_num += 1
+    
+    print(frame_num)
+    print(detected_ball_colors)
 
-
+    

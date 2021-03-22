@@ -85,7 +85,6 @@ def detect(opt, device, save_img=False):
     out, source, weights, view_img, save_txt, imgsz = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
-    
 
     colorOrder = ['red', 'purple', 'blue', 'green', 'yellow', 'orange']
     frame_num = 0
@@ -199,7 +198,6 @@ def detect(opt, device, save_img=False):
                 for *xyxy, conf, cls in det:
                     
                     img_h, img_w, _ = im0.shape  # get image shape
-                    
                     x_c, y_c, bbox_w, bbox_h = bbox_rel(img_w, img_h, *xyxy)
                     obj = [x_c, y_c, bbox_w, bbox_h]
                     bbox_xywh.append(obj)
@@ -336,7 +334,6 @@ if __name__ == '__main__':
     parser.add_argument('--groundtruths', default='./inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
     args = parser.parse_args()
     args.img_size = check_img_size(args.img_size)
-    print(args)
 
     groundtruths_path = args.groundtruths
     
@@ -349,9 +346,9 @@ if __name__ == '__main__':
     
     #Color dictonary for ball tracking where red : [(upper), (lower)] in HSV values
     #Use https://www.rapidtables.com/web/color/RGB_Color.html for hue 
-    hueOffset = 4
-    satOffset = 100
-    valOffset = 100
+    hueOffset = 10
+    satOffset = 150
+    valOffset = 150
 
 
     #BGR Values for each color tested
@@ -389,6 +386,8 @@ if __name__ == '__main__':
         "yellow" : [colorListHSV[0][0], colorListHSV[0][1]],
         "orange" : [colorListHSV[4][0], colorListHSV[4][1]],  
     }
+
+    solution.generateDynColorDict(groundtruths_path, colorDict, args)
 
     with torch.no_grad():
         detect(args, device)
