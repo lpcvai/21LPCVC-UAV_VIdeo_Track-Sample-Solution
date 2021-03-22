@@ -97,7 +97,7 @@ def detect_colors(image, bbox_XYranges, classes, ids, colorDict):
             area_colors = get_roi_colors(image, bbox_XYranges[i], bbox_offset, cross_size)
 
             #Check if the color is in a specified range
-            result, color = check_color(colorDict, area_colors, det_clr)
+            result, color, value = check_color(colorDict, area_colors, det_clr)
             
             if (result == True):
                 det_clr.append(color)
@@ -114,13 +114,13 @@ def check_color(colorDict, area_colors, det_clr):
             tmp = [sum(clmn) / len(area_colors) for clmn in zip(*area_colors)]
             avgs = tuple(tmp)
             if ((avgs <= upper) and (avgs >= lower)):
-                return (True, color)
+                return (True, color, avgs)
         elif (color not in det_clr):
             for a_clr in area_colors:
                 if ((a_clr <= upper) and (a_clr >= lower)):
-                    return (True, color)
+                    return (True, color, a_clr)
     
-    return (False, color)
+    return (False, color, 0)
 
 
 def get_roi_colors(image, bbox_XYranges, bbox_offset, cross_size):
@@ -158,8 +158,8 @@ def get_roi_colors(image, bbox_XYranges, bbox_offset, cross_size):
         area_colors.append(ball_color)
 
     return area_colors
-
-
+ 
+ 
 def bbox_xyxy2XYranges(bbox_xyxy):
     bbox_XYranges = []
 
@@ -326,45 +326,45 @@ def generateDynColorDict(groundtruths_path, colorDict, args):
     frame_num = 0
     detected_ball_colors = {}
     bbox_offset = 5
+    cross_size = 2
+    bbox_xy = []
+    det_clr = []
+
     for path, img, im0, vid_cap in dataset:
         img_h, img_w, _ = im0.shape
         groundtruths = load_labels(groundtruths_path, img_w,img_h, frame_num)
-        if(groundtruths.shape[0] ==0):
+        if(groundtruths.shape[0] == 0):
             break
         
 
-        for i in range(len(groundtruths)):
-            if groundtruths[i][0] == 1:
-                X = groundtruths[i][2]
-                Y = groundtruths[i][3]
-                width = groundtruths[i][4]
-                height = groundtruths[i][5]
-                #extraction = im0[int(Y - height/2):int(Y + height/2), int(X - width/2):int(X + width/2)]
-                roi_bgr = im0[int(Y - bbox_offset):int(Y + bbox_offset), int(X - bbox_offset):int(X + bbox_offset)]
+        for truth in groundtruths:
+            if truth[0] == 1:
+                X = truth[2]
+                Y = truth[3]
+                width = truth[4]
+                height = truth[5]
+                values = [X - width/2, Y - height/2, X + width/2, Y + height/2]
 
+                bbox_xy.append(values)
+        
+        ranges = bbox_xyxy2XYranges(bbox_xy)
+        for range in ranges:
+            area_colors = get_roi_colors(im0, range, bbox_offset, cross_size)
+            result, color, values = check_color(colorDict, area_colors, det_clr)
+            if result:
+                det_clr.append(color)
+                detected_ball_colors[color] = values
 
-                #Convert BGR image to HSV image
-                roi_hsv = cv2.cvtColor(roi_bgr, cv2.COLOR_BGR2HSV)
-                hue  = np.mean(roi_hsv[:,:,0])
-                sat = np.mean(roi_hsv[:,:,1])
-                val   = np.mean(roi_hsv[:,:,2])
-                ball_color = (hue, sat, val)
-
-                for color in colorDict:
-                    upper = colorDict[color][0]
-                    lower = colorDict[color][1]
-
-                    if (ball_color <= upper) :
-                        if (ball_color >= lower) :
-                            if groundtruths[i][1].item() in detected_ball_colors:
-                                detected_ball_colors[groundtruths[i][1].item()].append(color)
-                            else:
-                                detected_ball_colors[groundtruths[i][1].item()] = [color]
-                                print("NEW ENTRY")
-                            break
+        bbox_xy = []
         frame_num += 1
     
-    print(frame_num)
-    print(detected_ball_colors)
+    for color in detected_ball_colors:
+        HSV = detected_ball_colors[color]
+        H = [HSV[0] - 5, HSV[0] + 5]
+        S = [HSV[1] - 50, HSV[0] + 50]
+        V = [HSV[2] - 50, HSV[0] + 50]
+        detected_ball_colors[color] = [(H[0], S[0], V[0]), (H[1], S[1], V[1])]
+
+    return detected_ball_colors
 
     

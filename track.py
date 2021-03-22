@@ -387,7 +387,7 @@ if __name__ == '__main__':
         "orange" : [colorListHSV[4][0], colorListHSV[4][1]],  
     }
 
-    solution.generateDynColorDict(groundtruths_path, colorDict, args)
+    colorDict = solution.generateDynColorDict(groundtruths_path, colorDict, args)
 
     with torch.no_grad():
         detect(args, device)
