@@ -358,7 +358,7 @@ def generateDynColorDict(groundtruths_path, colorDict, args):
         
         ranges = bbox_xyxy2XYranges(bbox_xy)
         for range in ranges:
-            area_colors = get_roi_colors(im0, range, bbox_offset, cross_size)
+            area_colors = get_roi_colors(im0, range, bbox_offset, cross_size, "crosshair")
             result, color, values = check_color(colorDict, area_colors, det_clr)
             if result:
                 det_clr.append(color)
