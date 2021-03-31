@@ -6,8 +6,8 @@ import time
 from pathlib import Path
 
 import cv2
-#import torch
-#import torch.backends.cudnn as cudnn
+import torch
+import torch.backends.cudnn as cudnn
 from numpy import random
 import numpy as np
 
@@ -62,10 +62,8 @@ def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offse
         x2 += offset[0]
         y1 += offset[1]
         y2 += offset[1]
-        # box text and bar
-        # The following line was problematic. With this labeling should be fixed
         # Contributor YKS
-        # id = i + 1
+        
         try:
             id = int(id_mapping[identities[i]]) if identities is not None else 0    
         except KeyError:
@@ -78,7 +76,6 @@ def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offse
         cv2.rectangle(img, (x1, y1),(x2,y2), color, 3)
         cv2.rectangle(img, (x1, y1), (x1 + t_size[0] + 3, y1 + t_size[1] + 4), color, -1)
         cv2.putText(img, label, (x1, y1 + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
-    #return img
 
 
 def detect(opt, device, save_img=False):
@@ -95,7 +92,6 @@ def detect(opt, device, save_img=False):
 
     for color in colorDict:
         ball_person_pairs[color] = 0
-
     
 
     # Read Class Name Yaml
@@ -117,39 +113,35 @@ def detect(opt, device, save_img=False):
     os.makedirs(out)  # make new output folder
 
     # Load model
-    #google_utils.attempt_download(weights)
-    model = torch.load(weights, map_location=device)['model'].float()  # load to FP32
-    #model = torch.save(torch.load(weights, map_location=device), weights)  # update model if SourceChangeWarning
-    # model.fuse()
-    model.to(device).eval()
+    model = attempt_load(weights, map_location=device)  # load FP32 model
+    stride = int(model.stride.max())  # model stride
+    imgsz = check_img_size(imgsz, s=stride)  # check img_size
     if half:
         model.half()  # to FP16
 
     # Second-stage classifier
     classify = False
     if classify:
-        modelc = torch_utils.load_classifier(name='resnet101', n=2)  # initialize
-        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model'])  # load weights
-        modelc.to(device).eval()
+        modelc = load_classifier(name='resnet101', n=2)  # initialize
+        modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
 
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
-        view_img = True
+        view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz)
+        dataset = LoadStreams(source, img_size=imgsz, stride=stride)
     else:
-        save_img = True
-        dataset = LoadImages(source, img_size=imgsz)
+        dataset = LoadImages(source, img_size=imgsz, stride=stride)
 
     # Get names and colors
     names = model.module.names if hasattr(model, 'module') else model.names
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
 
     # Run inference
+    if device.type != 'cpu':
+        model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
-    img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
-    _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -185,11 +177,6 @@ def detect(opt, device, save_img=False):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
-                # Print results
-                #for c in det[:, -1].unique():
-                    #n = (det[:, -1] == c).sum()  # detections per class
-                    #s += '%g %ss, ' % (n, names[int(c)])  # add to string
-
                 bbox_xywh = []
                 confs = []
                 clses = []
@@ -204,10 +191,6 @@ def detect(opt, device, save_img=False):
                     confs.append([conf.item()])
                     clses.append([cls.item()])
                     
-                    #if save_img or view_img:  # Add bbox to image
-                        #label = '%s %.2f' % (names[int(cls)], conf)
-                        #plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
-                
                 xywhs = torch.Tensor(bbox_xywh)
                 confss = torch.Tensor(confs)
                 clses = torch.Tensor(clses)
@@ -234,7 +217,6 @@ def detect(opt, device, save_img=False):
                                 if (abs(DS_ID[0]-real_ID[1])/img_w < 0.005) and (abs(DS_ID[1]-real_ID[2])/img_h < 0.005) and (abs(DS_ID[2]-real_ID[3])/img_w < 0.005) and(abs(DS_ID[3]-real_ID[4])/img_w < 0.005):
                                     id_mapping[DS_ID[4]] = int(real_ID[0])
                 else:
-                    # print('\ndisabled', groundtruths_path)
                     outputs = deepsort.update(xywhs, confss, clses, im0)
 
 
@@ -253,7 +235,7 @@ def detect(opt, device, save_img=False):
                         else:
                             mapped_id_list.append(ids)
 
-                    ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder)
+                    ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder, save_img)
                     
                     t3 = time_synchronized()
                     draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
@@ -272,7 +254,7 @@ def detect(opt, device, save_img=False):
             fpses.append(fps)
             print('FPS=%.2f' % fps)
             
-
+            
             # Stream results
             if view_img:
                 cv2.imshow(p, im0)
@@ -296,12 +278,13 @@ def detect(opt, device, save_img=False):
                     vid_writer.write(im0)
             frame_num += 1
                     
-        #print('Inference Time = %.2f' % (time_synchronized() - t1))
-        #print('FPS=%.2f' % (1/(time_synchronized() - t1)))
+        
+        
 
+    #t4 = time_synchronized()
     avgFps = (sum(fpses) / len(fpses))
     print('Average FPS = %.2f' % avgFps)
-
+    #print('Total Runtime = %.2f' % (t4 - t0))
     
     outpath = os.path.basename(source)
     outpath = outpath[:-4]
@@ -332,6 +315,7 @@ if __name__ == '__main__':
     parser.add_argument('--augment', action='store_true', help='augmented inference')
     parser.add_argument("--config_deepsort", type=str, default="deep_sort/configs/deep_sort.yaml")
     parser.add_argument('--groundtruths', default='./inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
+    parser.add_argument('--save-img', action='store_true', help='save video to outputs')
     args = parser.parse_args()
     args.img_size = check_img_size(args.img_size)
 
@@ -339,55 +323,16 @@ if __name__ == '__main__':
     
     # Select GPU
     device = select_device(args.device)
-    import torch
-    import torch.backends.cudnn as cudnn
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
+    #Color tolerance for tracking 
+    hueOffset = 2
+    satOffset = 50
+    valOffset = 50
+
+    clr_offs = (hueOffset, satOffset, valOffset)
     
-    #Color dictonary for ball tracking where red : [(upper), (lower)] in HSV values
-    #Use https://www.rapidtables.com/web/color/RGB_Color.html for hue 
-    hueOffset = 10
-    satOffset = 150
-    valOffset = 150
-
-
-    #BGR Values for each color tested
-    yellowBGR = np.uint8([[[ 81, 205, 217]]])
-    redBGR    = np.uint8([[[ 78,  87, 206]]])
-    blueBGR   = np.uint8([[[197, 137,  40]]])
-    greenBGR  = np.uint8([[[101, 141,  67]]])
-    orangeBGR = np.uint8([[[ 84, 136, 227]]])
-    purpleBGR = np.uint8([[[142,  72,  72]]])
-
-
-    colorListBGR = [yellowBGR, redBGR, blueBGR, greenBGR, orangeBGR, purpleBGR]
-    colorListHSVTmp = []
-    colorListHSV = []
-
-
-    #Convert BGR to HSV
-    for bgr in colorListBGR:
-        colorListHSVTmp.append(cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV))
-    
-
-    #Create ranges based off offsets
-    for i in range(len(colorListBGR)):
-        hsv = colorListHSVTmp[i][0][0]
-        upper = (hsv[0] + hueOffset, hsv[1] + satOffset, hsv[2] + valOffset)
-        lower = (hsv[0] - hueOffset, hsv[1] - satOffset, hsv[2] - valOffset)
-        colorListHSV.append([upper, lower])
-
-
-    colorDict = {
-        "red"    : [colorListHSV[1][0], colorListHSV[1][1]],
-        "purple" : [colorListHSV[5][0], colorListHSV[5][1]],
-        "blue"   : [colorListHSV[2][0], colorListHSV[2][1]],
-        "green"  : [colorListHSV[3][0], colorListHSV[3][1]],
-        "yellow" : [colorListHSV[0][0], colorListHSV[0][1]],
-        "orange" : [colorListHSV[4][0], colorListHSV[4][1]],  
-    }
-
-    colorDict = solution.generateDynColorDict(groundtruths_path, colorDict, args)
+    colorDict = solution.generateDynColorDict(groundtruths_path, clr_offs, args)
 
     with torch.no_grad():
-        detect(args, device)
+        detect(args, device, save_img=args.save_img)
