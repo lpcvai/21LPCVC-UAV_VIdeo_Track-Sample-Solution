@@ -138,11 +138,26 @@ def detect(opt, device, save_img=False):
     names = model.module.names if hasattr(model, 'module') else model.names
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
 
+
     # Run inference
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
+
+    #Skip Variables
+    skipThreshold = 0 #Current number of frames skipped
+    skipLimit = 10 #Num of frames to skip
+    
     for path, img, im0s, vid_cap in dataset:
+
+        if frame_num > 10 and skipThreshold < skipLimit:
+            skipThreshold = skipThreshold + 1
+            frame_num += 1
+            continue
+        
+
+        skipThreshold = 0
+
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -282,13 +297,14 @@ def detect(opt, device, save_img=False):
         
 
     #t4 = time_synchronized()
-    avgFps = (sum(fpses) / len(fpses))
-    print('Average FPS = %.2f' % avgFps)
+    #avgFps = (sum(fpses) / len(fpses))
+    #print('Average FPS = %.2f' % avgFps)
     #print('Total Runtime = %.2f' % (t4 - t0))
     
     outpath = os.path.basename(source)
     outpath = outpath[:-4]
     outpath = out + '/' + outpath + '_out.csv'
+    print(outpath)
     solution.write_catches(outpath, frame_catch_pairs, colorOrder)
 
     if save_txt or save_img:
