@@ -79,8 +79,8 @@ def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offse
 
 
 def detect(opt, device, save_img=False):
-    out, source, weights, view_img, save_txt, imgsz = \
-        opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+    out, source, weights, view_img, save_txt, imgsz, skipLimit = \
+        opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.skip_frames
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     colorOrder = ['red', 'purple', 'blue', 'green', 'yellow', 'orange']
@@ -93,6 +93,7 @@ def detect(opt, device, save_img=False):
     for color in colorDict:
         ball_person_pairs[color] = 0
     
+    print("FRAMES SKIPPED: " + str(skipLimit))
 
     # Read Class Name Yaml
     with open(opt.data) as f:
@@ -146,7 +147,6 @@ def detect(opt, device, save_img=False):
 
     #Skip Variables
     skipThreshold = 0 #Current number of frames skipped
-    skipLimit = 10 #Num of frames to skip
     
     for path, img, im0s, vid_cap in dataset:
 
@@ -332,6 +332,7 @@ if __name__ == '__main__':
     parser.add_argument("--config_deepsort", type=str, default="deep_sort/configs/deep_sort.yaml")
     parser.add_argument('--groundtruths', default='./inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
     parser.add_argument('--save-img', action='store_true', help='save video to outputs')
+    parser.add_argument('--skip-frames', type=int, default=1, help='number of frames skipped after each frame scanned')
     args = parser.parse_args()
     args.img_size = check_img_size(args.img_size)
 
