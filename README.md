@@ -1,8 +1,5 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
-## NOTE: The current release has not been tested on the Raspberry Pi 
-## News
-- (3/8/2021) Initial release
-- (3/30/2021) New color detection method (Accuracy Increased ~30%)
+## NOTE: The current release is not merged with main branch.
 
 ## Installation 
 ### Prepare
@@ -76,6 +73,7 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 python3 track.py --source VIDEOSOURCE --groundtruths PATHTOCSV --save-img --skip-frames NUMOFFRAMES
 ~~~
 
+## Frame Skipping Testing Numbers
 
 
 ## References
