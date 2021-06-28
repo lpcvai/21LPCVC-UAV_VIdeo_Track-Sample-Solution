@@ -1,5 +1,5 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
-## NOTE: The current release is not merged with main branch.
+## NOTE: The frame skipping method implemented here is not merged with the main branch
 
 ## Installation 
 ### Prepare
