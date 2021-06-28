@@ -74,7 +74,7 @@ python3 track.py --source VIDEOSOURCE --groundtruths PATHTOCSV --save-img --skip
 ~~~
 
 ## Frame Skipping Testing Numbers
-
+These test results are based on the current release of the referee system, and numbers could change with newer versions of the referee system.
 
 ## References
 1) [Multi-class Yolov5 + Deep Sort with PyTorch](https://github.com/WuPedin/Multi-class_Yolov5_DeepSort_Pytorch)
