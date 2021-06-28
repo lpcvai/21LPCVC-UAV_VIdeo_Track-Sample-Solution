@@ -80,7 +80,7 @@ Tested with N = 1 for --skip-frames
 
 | Video File    | Original Solution Accuracy | Original Solution Time | Frame Skipped Accuracy | Frame Skipped Time |
 | ------------- | -------------------------- | ---------------------- | ---------------------- | ------------------ |
-| 4p1b_01A2.m4v |                            |                        |                        |                    |
+| 4p1b_01A2.m4v | 93%                        | 65.839 s               | ERROR                  | 42.097 s           |
 | 5p2b_01A1.m4v | 93%                        | 134.788 s              | 82%                    | 86.795 s           |
 | 5p4b_01A2.m4v | 92%                        | 87.064 s               | 88%                    | 41.653 s           |
 | 5p5b_03A1.m4v | 48%                        | 80.131 s               | 48%                    | 51.083 s           |
