@@ -73,7 +73,7 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 
 ## Run
 ~~~
-python3 track.py --source VIDEOSOURCE --groundtruths PATHTOCSV --save-img
+python3 track.py --source VIDEOSOURCE --groundtruths PATHTOCSV --save-img --skip-frames NUMOFFRAMES
 ~~~
 
 
