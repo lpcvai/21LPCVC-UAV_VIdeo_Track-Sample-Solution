@@ -1,8 +1,5 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
-## NOTE: The current release has not been tested on the Raspberry Pi 
-## News
-- (3/8/2021) Initial release
-- (3/30/2021) New color detection method (Accuracy Increased ~30%)
+## NOTE: The frame skipping method implemented here is not merged with the main branch
 
 ## Installation 
 ### Prepare
@@ -73,10 +70,21 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 
 ## Run
 ~~~
-python3 track.py --source VIDEOSOURCE --groundtruths PATHTOCSV --save-img
+python3 track.py --source VIDEOSOURCE --groundtruths PATHTOCSV --save-img --skip-frames NUMOFFRAMES
 ~~~
 
+## Frame Skipping Testing Numbers
+These test results are based on the current release of the referee system, and numbers could change with newer versions of the referee system.
 
+Tested with N = 1 for --skip-frames
+
+| Video File    | Original Solution Accuracy | Original Solution Time | Frame Skipped Accuracy | Frame Skipped Time |
+| ------------- | -------------------------- | ---------------------- | ---------------------- | ------------------ |
+| 4p1b_01A2.m4v | 93%                        | 65.839 s               | ERROR                  | 42.097 s           |
+| 5p2b_01A1.m4v | 93%                        | 134.788 s              | 82%                    | 86.795 s           |
+| 5p4b_01A2.m4v | 92%                        | 87.064 s               | 88%                    | 41.653 s           |
+| 5p5b_03A1.m4v | 48%                        | 80.131 s               | 48%                    | 51.083 s           |
+| 7p3b_02M.m4v  |                            |                        |                        |                    |
 
 ## References
 1) [Multi-class Yolov5 + Deep Sort with PyTorch](https://github.com/WuPedin/Multi-class_Yolov5_DeepSort_Pytorch)

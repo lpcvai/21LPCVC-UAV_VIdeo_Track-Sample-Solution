@@ -79,8 +79,8 @@ def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offse
 
 
 def detect(opt, device, save_img=False):
-    out, source, weights, view_img, save_txt, imgsz = \
-        opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+    out, source, weights, view_img, save_txt, imgsz, skipLimit = \
+        opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.skip_frames
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     colorOrder = ['red', 'purple', 'blue', 'green', 'yellow', 'orange']
@@ -93,6 +93,7 @@ def detect(opt, device, save_img=False):
     for color in colorDict:
         ball_person_pairs[color] = 0
     
+    print("FRAMES SKIPPED: " + str(skipLimit))
 
     # Read Class Name Yaml
     with open(opt.data) as f:
@@ -138,11 +139,25 @@ def detect(opt, device, save_img=False):
     names = model.module.names if hasattr(model, 'module') else model.names
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
 
+
     # Run inference
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
+
+    #Skip Variables
+    skipThreshold = 0 #Current number of frames skipped
+    
     for path, img, im0s, vid_cap in dataset:
+
+        if frame_num > 10 and skipThreshold < skipLimit:
+            skipThreshold = skipThreshold + 1
+            frame_num += 1
+            continue
+        
+
+        skipThreshold = 0
+
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -282,13 +297,14 @@ def detect(opt, device, save_img=False):
         
 
     #t4 = time_synchronized()
-    avgFps = (sum(fpses) / len(fpses))
-    print('Average FPS = %.2f' % avgFps)
+    #avgFps = (sum(fpses) / len(fpses))
+    #print('Average FPS = %.2f' % avgFps)
     #print('Total Runtime = %.2f' % (t4 - t0))
     
     outpath = os.path.basename(source)
     outpath = outpath[:-4]
     outpath = out + '/' + outpath + '_out.csv'
+    print(outpath)
     solution.write_catches(outpath, frame_catch_pairs, colorOrder)
 
     if save_txt or save_img:
@@ -316,6 +332,7 @@ if __name__ == '__main__':
     parser.add_argument("--config_deepsort", type=str, default="deep_sort/configs/deep_sort.yaml")
     parser.add_argument('--groundtruths', default='./inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
     parser.add_argument('--save-img', action='store_true', help='save video to outputs')
+    parser.add_argument('--skip-frames', type=int, default=1, help='number of frames skipped after each frame scanned')
     args = parser.parse_args()
     args.img_size = check_img_size(args.img_size)
 
