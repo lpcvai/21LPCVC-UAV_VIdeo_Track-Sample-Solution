@@ -1,5 +1,4 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
-## NOTE: The frame skipping method implemented here is not merged with the main branch
 
 ## Installation 
 ### Prepare
@@ -17,10 +16,12 @@
    
 ### Download Pre-trained Models
 1. The trained weights are provided [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EuCYkSRgyXVCh8PwwsHZ9lYBNfI4A4cLgdi5sHIlRSsZCQ?e=yjoJ2P).
-The weights are called `best.pt` and should be placed under `yolov5/weights/`.
+The weights are called `best.pt` and should be placed under `yolov5/weights/`. 
+We recommend using the `best.pt` weights, since it is using the smallest yolov5 model avalible, which is most sutibable for the Raspberry Pi / mobile. 
+There is another model named yolov5l, which utilizes a more complex model for higher accuracy, but results in less FPS.
 Make sure to use them to get the best detections.
-The trained weights were created using a dataset containing over 12,000 images. More stats on the dataset can be found in `yolov5/weights/stats.txt`.
-Specific stats about the training session can be viewed [here](https://wandb.ai/dual19/YOLOv5/runs/2hkzouqz?workspace=user-dual19) if you're interested. 
+The trained weights were created using a [dataset](https://purdue0-my.sharepoint.com/:u:/g/personal/akocher_purdue_edu/EeW4m2AjhuxFhIuwXFQNHcgB87WWzLYq6PVWMri9ZRjHIw?e=18ogEg) containing over 10,000 images. More stats on the dataset can be found in `yolov5/weights/stats.txt`.
+Specific stats about the training session can be viewed [here](https://wandb.ai/dual19/...?workspace=user-dual19) if you're interested.
 
 
 2. The DeepSORT weights need to be downloaded; they can be found [here](https://purdue0-my.sharepoint.com/:u:/g/personal/hu440_purdue_edu/EYvoc5gij4dNpcGJ5jnBW94BP5H5LU_dcW0dHtm_lX8aBQ?e=s8j3LW).
@@ -68,11 +69,6 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 ```
 
 
-## Run
-~~~
-python3 track.py --source VIDEOSOURCE --groundtruths PATHTOCSV --save-img --skip-frames NUMOFFRAMES
-~~~
-
 ## Frame Skipping Testing Numbers
 These test results are based on the current release of the referee system, and numbers could change with newer versions of the referee system.
 
@@ -85,6 +81,12 @@ Tested with N = 1 for --skip-frames
 | 5p4b_01A2.m4v | 92%                        | 87.064 s               | 88%                    | 41.653 s           |
 | 5p5b_03A1.m4v | 48%                        | 80.131 s               | 48%                    | 51.083 s           |
 | 7p3b_02M.m4v  |                            |                        |                        |                    |
+
+
+# Run
+~~~
+python3 track.py --source VIDEOSOURCE --groundtruths PATHTOCSV --save-img --skip-frames NUMOFFRAMES
+~~~
 
 ## References
 1) [Multi-class Yolov5 + Deep Sort with PyTorch](https://github.com/WuPedin/Multi-class_Yolov5_DeepSort_Pytorch)
