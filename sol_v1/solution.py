@@ -17,9 +17,6 @@ current_file_data = None
 #Input Functions for Sample Solution
 def load_labels(file_name, image_width, image_height, frame_number=-1):
     '''
-    Author: 
-        Ziteng Jiao
-
     Parameter:
         file_name:      path to the label file. groundtruths.txt
         image_width:    the width of image (video frame)
