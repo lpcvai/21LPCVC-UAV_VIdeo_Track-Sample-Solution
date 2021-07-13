@@ -1,15 +1,14 @@
 name: SampleSolution
 channels:
   - pytorch
-  - nvidia
   - conda-forge
 dependencies:
   - python=3.9
   - pip
   - pytorch=1.9
+  - cpuonly
   - torchvision=0.10
-  - cudatoolkit=11.1
-
+  
   - matplotlib
   - numpy
   - pillow>=8.1.2

@@ -1,6 +1,6 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
 
-Sample Solution Development README can be found [here](sol_v1/README.md).
+Sample Solution Development README can be found [here](solution/README.md).
 
 ## Submission Instruction
 _Notice: The names of files or folders are sensitive._
