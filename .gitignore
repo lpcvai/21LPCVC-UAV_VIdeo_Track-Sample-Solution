@@ -1,7 +1,9 @@
- *.MP4
+*.MP4
 *.m4v
 *.mp4
-test.ipynb
 __pycache__/*
 *.vscode
 outputs/*
+inputs/*
+*.pyz
+*.pyc

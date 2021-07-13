@@ -13,7 +13,8 @@ import numpy as np
 
 # https://github.com/pytorch/pytorch/issues/3678
 import sys
-sys.path.insert(0, './yolov5')
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, dir_path+'/yolov5')
 
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.datasets import LoadStreams, LoadImages
@@ -32,7 +33,14 @@ import solution
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 id_mapping = {}
 groundtruths_path = None
+device = None
+half = None
 
+hueOffset = None
+satOffset = None
+valOffset = None
+clr_offs = None
+colorDict = None
 
 def bbox_rel(image_width, image_height,  *xyxy):
     """" Calculates the relative bounding box from absolute pixel values. """
@@ -103,15 +111,16 @@ def detect(opt, device, save_img=False):
     # initialize deepsort
     cfg = get_config()
     cfg.merge_from_file(opt.config_deepsort)
-    deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
+    deepsort = DeepSort(dir_path + '/' + cfg.DEEPSORT.REID_CKPT,
                         max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE, 
                         nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP, max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE, 
                         max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET, use_cuda=True)
 
     # Initialize
-    if os.path.exists(out):
-        shutil.rmtree(out)  # delete output folder
-    os.makedirs(out)  # make new output folder
+    if not os.path.exists(out):
+        os.makedirs(out)  # make new output folder
+        # shutil.rmtree(out)  # delete output folder
+    # os.makedirs(out)  # make new output folder
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -297,8 +306,8 @@ def detect(opt, device, save_img=False):
         
 
     #t4 = time_synchronized()
-    #avgFps = (sum(fpses) / len(fpses))
-    #print('Average FPS = %.2f' % avgFps)
+    avgFps = (sum(fpses) / len(fpses))
+    print('Average FPS = %.2f' % avgFps)
     #print('Total Runtime = %.2f' % (t4 - t0))
     
     outpath = os.path.basename(source)
@@ -312,13 +321,12 @@ def detect(opt, device, save_img=False):
         if platform == 'darwin':  # MacOS
             os.system('open ' + save_path)
 
-
-if __name__ == '__main__':
+def run(vid_src, grd_src):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='yolov5/weights/best.pt', help='model.pt path')
-    parser.add_argument('--data', type=str, default='ballPerson.yaml', help='data yaml path')
-    parser.add_argument('--source', type=str, default='inference/images', help='source')
-    parser.add_argument('--output', type=str, default='outputs', help='output folder')
+    parser.add_argument('--weights', type=str, default=dir_path + '/yolov5/weights/best.pt', help='model.pt path')
+    parser.add_argument('--data', type=str, default=dir_path + '/ballPerson.yaml', help='data yaml path')
+    parser.add_argument('--source', type=str, default=dir_path + '/inference/images', help='source')
+    parser.add_argument('--output', type=str, default=dir_path + '/outputs', help='output folder')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
@@ -329,8 +337,50 @@ if __name__ == '__main__':
     parser.add_argument('--classes', nargs='+', type=int, default=[0, 1], help='filter by class') #Default [0]
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
     parser.add_argument('--augment', action='store_true', help='augmented inference')
-    parser.add_argument("--config_deepsort", type=str, default="deep_sort/configs/deep_sort.yaml")
-    parser.add_argument('--groundtruths', default='./inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
+    parser.add_argument("--config_deepsort", type=str, default=dir_path + "/deep_sort/configs/deep_sort.yaml")
+    parser.add_argument('--groundtruths', default= dir_path + '/inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
+    parser.add_argument('--save-img', action='store_true', help='save video to outputs')
+    parser.add_argument('--skip-frames', type=int, default=1, help='number of frames skipped after each frame scanned')
+    args = parser.parse_args(args=['--source', vid_src, '--groundtruths', grd_src, '--output', './'])
+    args.img_size = check_img_size(args.img_size)
+
+    global groundtruths_path, device, half, hueOffset, satOffset, valOffset, clr_offs, colorDict
+    groundtruths_path = args.groundtruths
+    
+    # Select GPU
+    device = select_device(args.device)
+    half = device.type != 'cpu'  # half precision only supported on CUDA
+
+    #Color tolerance for tracking 
+    hueOffset = 2
+    satOffset = 50
+    valOffset = 50
+
+    clr_offs = (hueOffset, satOffset, valOffset)
+    
+    colorDict = solution.generateDynColorDict(groundtruths_path, clr_offs, args)
+
+    with torch.no_grad():
+        detect(args, device, save_img=False)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', type=str, default=dir_path + '/yolov5/weights/best.pt', help='model.pt path')
+    parser.add_argument('--data', type=str, default=dir_path + '/ballPerson.yaml', help='data yaml path')
+    parser.add_argument('--source', type=str, default=dir_path + '/inference/images', help='source')
+    parser.add_argument('--output', type=str, default=dir_path + '/outputs', help='output folder')
+    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
+    parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
+    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--view-img', action='store_true', help='display results')
+    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
+    parser.add_argument('--classes', nargs='+', type=int, default=[0, 1], help='filter by class') #Default [0]
+    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
+    parser.add_argument('--augment', action='store_true', help='augmented inference')
+    parser.add_argument("--config_deepsort", type=str, default=dir_path + "/deep_sort/configs/deep_sort.yaml")
+    parser.add_argument('--groundtruths', default= dir_path + '/inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
     parser.add_argument('--save-img', action='store_true', help='save video to outputs')
     parser.add_argument('--skip-frames', type=int, default=1, help='number of frames skipped after each frame scanned')
     args = parser.parse_args()
