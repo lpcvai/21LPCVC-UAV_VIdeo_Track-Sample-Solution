@@ -341,7 +341,7 @@ def run(vid_src, grd_src):
     parser.add_argument('--groundtruths', default= dir_path + '/inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
     parser.add_argument('--save-img', action='store_true', help='save video to outputs')
     parser.add_argument('--skip-frames', type=int, default=1, help='number of frames skipped after each frame scanned')
-    args = parser.parse_args(args=['--source', vid_src, '--groundtruths', grd_src, '--output', './'])
+    args = parser.parse_args(args=['--source', vid_src, '--groundtruths', grd_src, '--output', './outputs'])
     args.img_size = check_img_size(args.img_size)
 
     global groundtruths_path, device, half, hueOffset, satOffset, valOffset, clr_offs, colorDict
