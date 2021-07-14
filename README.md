@@ -1,8 +1,8 @@
-# LPCVC21 Sample-Solution
+# LPCVC-21 Sample-Solution
 ![Output Example](images/example.gif)
-## Latest Testing Tesults Using Given Sample Data
 ![Testing Results](images/testing.png)
 ![Testing Results2](images/testing2.png)
+#### *_Results Obtained on Sample Data_
 
 ## Sample Solution Install and Details can be found [here](solution/README.md).
 
