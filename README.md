@@ -1,6 +1,10 @@
-# Drone-Vision-Spring-2021-Sample-Solution Development
+# LPCVC-21 Sample-Solution
+![Output Example](images/example.gif)
+![Testing Results](images/testing.png)
+![Testing Results2](images/testing2.png)
+#### *_Results Obtained on Sample Data_
 
-Sample Solution Development README can be found [here](sol_v1/README.md).
+# Sample Solution Install and Details can be found [here](solution/README.md).
 
 ## Submission Instruction
 _Notice: The names of files or folders are sensitive._

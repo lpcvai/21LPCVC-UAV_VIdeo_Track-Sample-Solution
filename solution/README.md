@@ -9,10 +9,21 @@
     ```
     
 2. Create a virtual environment and install it's dependencies:
+    * __For desktop with Nvidia GPU__
+      ```
+      conda env create -f environment.yml     
+      ```
+    * __For desktop without Nvidia GPU__
+      ```
+      conda env create -f environment_nocuda.yml     
+      ```
+3. Activate conda environment
     ```
-    conda env create -f environment.yml     
     conda activate SampleSolution
     ```
+
+
+
    
 ### Download Pre-trained Models
 1. The trained weights are provided [here](https://purdue0-my.sharepoint.com/:f:/g/personal/hu440_purdue_edu/EuCYkSRgyXVCh8PwwsHZ9lYBNfI4A4cLgdi5sHIlRSsZCQ?e=yjoJ2P).
@@ -34,39 +45,39 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 
 
 2. The second input is a csv file, containing the first 10 frames for the solution to acquire the correct labels. An additional 10 frames will be provided in the middle of the video, to recalibrate the labels if some identity switching occurs. The format for the input file in `inputs/"videoname".csv` should be similar to the example below. NOTE: The delimiter between each value in the actual csv file will be a comma (","), the | is just for visualization. The bounding box coordinate system is based off of the YOLO annotation format. 
-```
-  Frame | Class |   ID  |   X   |   Y   | Width | Height|
-----------------------------------------------------------
-    0   |   0   |   1   |0.41015|0.39583|0.02031|0.03425|
-    0   |   0   |   2   |0.36835|0.61990|0.04557|0.18055|
-    0   |   1   |   3   |0.41015|0.39583|0.03593|0.16296|
-    1   |   0   |   1   |0.52942|0.39583|0.02031|0.03425|
-    1   |   0   |   2   |0.36835|0.61990|0.04557|0.18055|
-    1   |   1   |   3   |0.52942|0.39537|0.03593|0.16296|
+
+    | Frame | Class |   ID  |   X   |   Y   | Width | Height|
+    |-------|-------|-------|-------|-------|-------|-------|
+    |    0   |   0   |   1   |0.41015|0.39583|0.02031|0.03425|
+    |    0   |   0   |   2   |0.36835|0.61990|0.04557|0.18055|
+    |    0   |   1   |   3   |0.41015|0.39583|0.03593|0.16296|
+    |    1   |   0   |   1   |0.52942|0.39583|0.02031|0.03425|
+    |    1   |   0   |   2   |0.36835|0.61990|0.04557|0.18055|
+    |    1   |   1   |   3   |0.52942|0.39537|0.03593|0.16296|
 
 
-- Frame: The frame number of the annotation
-- Class: 0 for person, 1 for sports ball
+    - Frame: The frame number of the annotation
+    - Class: 0 for person, 1 for sports ball
 
-- X      = absolute_x / image_width
-- Y      = absolute_y / image_height
-- Width  = absolute_width /image_width
-- Height = absolute_height /image_height
-```
+    - X      = absolute_x / image_width
+    - Y      = absolute_y / image_height
+    - Width  = absolute_width /image_width
+    - Height = absolute_height /image_height
+
 
 
 
 ### Outputs
 1. The only output from the solution should be a text file. This text file will include the location of every ball when a single ball has been caught. The format for the output file in `outputs/"videoname"_out.csv` should be similar to the example below. NOTE: The delimiter between each value in the actual csv file will be a comma (","), the | is just for visualization.
 
-```
-  Frame | Yellow | Orange |  Red  | Purple |  Blue  | Green |
-----------------------------------------------------------
-    5   |   0    |   1    |   5   |   2    |   4    |   0    - Person 4 catches blue
-    30  |   0    |   3    |   5   |   2    |   4    |   0    - Person 3 catches orange
-    49  |   0    |   3    |   1   |   2    |   4    |   0    - Person 1 catches red
-    60  |   0    |   3    |   1   |   2    |   5    |   0    - Person 5 catches blue
-```
+
+|  Frame | Yellow | Orange |  Red  | Purple |  Blue  | Green |   |
+| ------ | ------ | ------ | ----- | ------ | ------ | ----- | - |
+| 5 | 0  | 1 | 5 | 2 | 4 | 0 | - Person 4 catches blue |
+| 30| 0  | 3 | 5 | 2 | 4 | 0 | - Person 3 catches orange |
+| 49 | 0 | 3 | 1 | 2 | 4 | 0 | - Person 1 catches red |
+| 60 | 0 | 3 | 1 | 2 | 5 | 0 | - Person 5 catches blue |
+
 
 
 ## Frame Skipping Testing Numbers

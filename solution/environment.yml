@@ -1,12 +1,13 @@
 name: SampleSolution
 channels:
   - pytorch
+  - nvidia
   - conda-forge
 dependencies:
   - python=3.9
   - pip
-  - pytorch=1.8
-  - torchvision=0.9
+  - pytorch=1.9
+  - torchvision=0.10
   - cudatoolkit=11.1
 
   - matplotlib
@@ -23,4 +24,4 @@ dependencies:
   - easydict
 
   - pip:
-    - opencv-python>=4.1.2
+    - opencv-contrib-python-headless>=4.1.2
