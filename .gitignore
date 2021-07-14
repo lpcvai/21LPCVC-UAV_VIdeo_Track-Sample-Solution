@@ -7,3 +7,4 @@ outputs/*
 inputs/*
 *.pyz
 *.pyc
+.DS_Store
