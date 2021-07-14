@@ -4,7 +4,7 @@
 ![Testing Results2](images/testing2.png)
 #### *_Results Obtained on Sample Data_
 
-## Sample Solution Install and Details can be found [here](solution/README.md).
+# Sample Solution Install and Details can be found [here](solution/README.md).
 
 ## Submission Instruction
 _Notice: The names of files or folders are sensitive._
