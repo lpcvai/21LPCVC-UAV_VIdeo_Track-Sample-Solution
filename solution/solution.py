@@ -6,9 +6,8 @@ import csv
 import statistics
 from os import path
 from yolov5.utils.datasets import LoadImages
-import cProfile
 
-import time
+
 #Constants
 current_file_name = ''
 current_file_data = None
@@ -60,12 +59,12 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
 
 #Output Functions for Sample Solution
 
-def detect_catches(image, bbox_xyxy, classes, ids, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder, save_img, avgtime):
+def detect_catches(image, bbox_xyxy, classes, ids, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder, save_img):
     #Create a list of bbox centers and ranges
     bbox_XYranges = bbox_xyxy2XYranges(bbox_xyxy)
     
     #Detect the color of each ball and return a dictionary matching id to color
-    detected_ball_colors, excTime = detect_colors(image, bbox_XYranges, classes, ids, colorDict, save_img)
+    detected_ball_colors = detect_colors(image, bbox_XYranges, classes, ids, colorDict, save_img)
 
     #Detect collison between balls and people
     collisions = detect_collisions(classes, ids, frame_num, bbox_XYranges, detected_ball_colors)
@@ -74,9 +73,7 @@ def detect_catches(image, bbox_xyxy, classes, ids, frame_num, colorDict, frame_c
     frame_catch_pairs, ball_person_pairs = update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pairs, colorOrder)
     bbox_strings = format_bbox_strings(ids, classes, detected_ball_colors, collisions)
 
-    
-    avgtime.append(excTime)
-    return (bbox_strings, frame_catch_pairs, ball_person_pairs, avgtime)
+    return (bbox_strings, frame_catch_pairs, ball_person_pairs)
 
 
 def detect_colors(image, bbox_XYranges, classes, ids, colorDict, save_img):
@@ -93,34 +90,29 @@ def detect_colors(image, bbox_XYranges, classes, ids, colorDict, save_img):
         #Checks if the class is a ball (1)
         if (classes[i] == 1): 
             #Extract region of interest HSV values
-            t0 = time.perf_counter_ns()
             area_colors = get_roi_colors(image, bbox_XYranges[i], bbox_offset, size, shape, save_img)
 
             #Check if the color is in a specified range
-            
             result, color = check_color(colorDict, area_colors, det_clr)
-            t1 = time.perf_counter_ns()
-            excTime = t1 - t0
-
+            
             if (result == True):
                 det_clr.append(color)
                 detected_ball_colors[ids[i]] = [color, bbox_XYranges[i][0], bbox_XYranges[i][1]]
           
-    return detected_ball_colors, excTime
+    return detected_ball_colors
 
-#@profile
+
 def check_color(colorDict, area_colors, det_clr):
     #Count each area's color
     color_counts = dict.fromkeys(colorDict.keys(), 0)
-    #area_colors = np.asarray(area_colors)
-
     for color in colorDict:
-        #upper = np.asarray(colorDict[color][0])
-        #lower = np.asarray(colorDict[color][1])
-        temp_clr = area_colors
+        upper = colorDict[color][0]
+        lower = colorDict[color][1]
 
         if (color not in det_clr):
-            color_counts[color] = np.count_nonzero((temp_clr>=np.asarray(colorDict[color][1])) == (temp_clr<=np.asarray(colorDict[color][0])))
+            for a_clr in area_colors:
+                if ((a_clr <= upper) and (a_clr >= lower)):
+                    color_counts[color] += 1 
                         
     #Find most prominent color
     most_color = max(color_counts, key=color_counts.get)
@@ -137,9 +129,9 @@ def get_roi_colors(image, bbox_XYranges, bbox_offset, size, shape, save_img):
 
     #Return if area is 1 pixel
     if (bbox_offset == -1):
-        #area_colors = [(area[0], area[1], area[2]) for area in roi_arr]
-        #return area_colors
-        return roi_arr
+        area_colors = [(area[0], area[1], area[2]) for area in roi_arr]
+        return area_colors
+
 
     #Average each area if area is greater than 1 pixel
     arr_size = len(roi_arr)
@@ -210,7 +202,7 @@ def create_crosshair(image, bbox_offset, bbox_XYranges, size, save_img):
         draw_testingboxes(image, bbox)
     return roi_arr
 
-#@profile
+
 def create_grid(image, bbox_offset, bbox_XYranges, size, save_img):
     #For testing
     bbox = []
@@ -230,47 +222,39 @@ def create_grid(image, bbox_offset, bbox_XYranges, size, save_img):
     y = size * -1
     
 
-
+    #Get 1 pixel or an area of pixels
+    if (bbox_offset == -1):
+        tmp1 = np.empty((1, 1, 3), dtype=np.uint8)
+        roi_arr = np.empty((num_roi, 3), dtype=np.uint8)
+    else:
+        roi_arr = np.empty((num_roi, bbox_offset*2, bbox_offset*2, 3), dtype=np.uint8)
     
 
-
-    if (bbox_offset == -1):
-        x1 = (np.arange(0, width) * X_step) + X
-        y1 = (np.arange(0, width) * Y_step) + Y
-        tmp0= image[y1, x1]
-        tmp1 = np.asarray(np.split(tmp0, 3, axis=0), dtype=np.uint8)
-        roi_arr = cv2.cvtColor(tmp1, cv2.COLOR_BGR2HSV)
-        tmp2 = np.vstack(roi_arr)
-        roi_arr = tmp2
-
-
-
     #Create grid
-    if (bbox_offset != -1):
-        roi_arr = np.empty((num_roi, bbox_offset*2, bbox_offset*2, 3), dtype=np.uint8)
-        for i in range(width):
-            x1 = (x * X_step) + X
-            for j in range(width):
-                y1 = (y * Y_step) + Y
-                ind = (i * width) + j
-                #if (bbox_offset == -1):
-                    #roi_arr[ind] = image[y1][x1]
-                #else:
-                    #roi_arr[ind] = image[(y1 - bbox_offset):(y1 + bbox_offset), (x1 - bbox_offset):(x1 + bbox_offset)]
+    for i in range(width):
+        x1 = (x * X_step) + X
+
+        for j in range(width):
+            y1 = (y * Y_step) + Y
+            ind = (i * width) + j
+
+            if (bbox_offset == -1):
+                roi_arr[ind] = image[y1][x1]
+            else:
                 roi_arr[ind] = image[(y1 - bbox_offset):(y1 + bbox_offset), (x1 - bbox_offset):(x1 + bbox_offset)]
 
-                bbox.append(((x1 - bbox_offset),(y1 - bbox_offset),(x1 + bbox_offset),(y1 + bbox_offset)))
-                y = y + 1
+            bbox.append(((x1 - bbox_offset),(y1 - bbox_offset),(x1 + bbox_offset),(y1 + bbox_offset)))
+            y = y + 1
 
-            y = size * -1
-            x = x + 1
+        y = size * -1
+        x = x + 1
 
-        #Convert values to HSV
-        for i in range(num_roi):
-            #if (bbox_offset == -1):
-                #tmp1[0][0] = roi_arr[i]
-                #roi_arr[i] = cv2.cvtColor(tmp1, cv2.COLOR_BGR2HSV)
-        
+    #Convert values to HSV
+    for i in range(num_roi):
+        if (bbox_offset == -1):
+            tmp1[0][0] = roi_arr[i]
+            roi_arr[i] = cv2.cvtColor(tmp1, cv2.COLOR_BGR2HSV)
+        else:
             tmp = roi_arr[i]
             roi_arr[i] = cv2.cvtColor(tmp, cv2.COLOR_BGR2HSV)
 

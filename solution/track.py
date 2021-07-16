@@ -97,7 +97,6 @@ def detect(opt, device, save_img=False):
     fpses = []
     frame_catch_pairs = []
     ball_person_pairs = {}
-    avgtime = []
 
     for color in colorDict:
         ball_person_pairs[color] = 0
@@ -153,7 +152,7 @@ def detect(opt, device, save_img=False):
     # Run inference
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
-    t0 = time.perf_counter()
+    t0 = time.time()
 
     #Skip Variables
     skipThreshold = 0 #Current number of frames skipped
@@ -260,7 +259,7 @@ def detect(opt, device, save_img=False):
                         else:
                             mapped_id_list.append(ids)
 
-                    ball_detect, frame_catch_pairs, ball_person_pairs, avgtime = solution.detect_catches(im0, bbox_xyxy, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder, save_img, avgtime)
+                    ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder, save_img)
                     
                     t3 = time_synchronized()
                     draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
@@ -310,8 +309,6 @@ def detect(opt, device, save_img=False):
     avgFps = (sum(fpses) / len(fpses))
     print('Average FPS = %.2f' % avgFps)
     #print('Total Runtime = %.2f' % (t4 - t0))
-    avgtime = sum(avgtime) / len(avgtime)
-    print('Average detech_catches Time = %.2f' % avgtime)
     
     outpath = os.path.basename(source)
     outpath = outpath[:-4]

@@ -3,9 +3,8 @@
 *.mp4
 __pycache__/*
 *.vscode
-solution/outputs/*
+outputs/*
 inputs/*
 *.pyz
 *.pyc
 .DS_Store
-*.lprof
