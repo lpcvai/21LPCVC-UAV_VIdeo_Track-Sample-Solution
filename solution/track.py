@@ -10,6 +10,7 @@ import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
 import numpy as np
+import cProfile
 
 # https://github.com/pytorch/pytorch/issues/3678
 import sys
