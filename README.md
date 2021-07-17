@@ -31,10 +31,14 @@ The valid version of Python for the challenge is the latest patch version of CPy
 If you intend on using a different version of Python, please contact the organizers as soon as possible via Slack.
 
 ### Output
-Your solution is expected to generate an `answer.txt` under the current directory when run. 
+Your solution is expected to generate `[video]_out.csv` files under `./outputs/` folder when run.    
+For example:
 ```
 ├── solution.pyz
-└── answers.txt
+└── outputs
+    ├── 5p4b_01A2_out.csv
+    ├── 4p1b_01A2_out.csv
+    └── ...
 ```   
 We will run your code using the follow command:
 ```
@@ -42,6 +46,6 @@ We will run your code using the follow command:
   $ cd solution/
   $ pip3 install -r requirements.txt
   $ cd ../
-  $ python3 solution/ video.mp4 questions.txt
+  $ python3 solution/ [video].mp4 in_[video].csv
 ```
 
