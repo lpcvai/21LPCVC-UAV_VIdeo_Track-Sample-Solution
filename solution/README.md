@@ -1,6 +1,10 @@
 # Drone-Vision-Spring-2021-Sample-Solution Development
 
-## Installation 
+## Installation
+### Prerequisite
+* __For desktop:__ Conda is required to handle the package installation. Follow this link to view the [Miniconda installer](https://docs.conda.io/en/latest/miniconda.html) page. 
+* __For Raspberry Pi:__ Follow the instructions to [setup Fedora on the Raspberry Pi](https://github.com/lpcvai/20LPCVC-Video_Track-Sample_Solution/wiki/64-bit-Operating-System-On-Pi). Then, install [Miniforge](https://github.com/conda-forge/miniforge) to handle the conda environment.
+
 ### Prepare
 1. Clone this repository:
     ```
@@ -77,21 +81,6 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 | 30| 0  | 3 | 5 | 2 | 4 | 0 | - Person 3 catches orange |
 | 49 | 0 | 3 | 1 | 2 | 4 | 0 | - Person 1 catches red |
 | 60 | 0 | 3 | 1 | 2 | 5 | 0 | - Person 5 catches blue |
-
-
-
-## Frame Skipping Testing Numbers
-These test results are based on the current release of the referee system, and numbers could change with newer versions of the referee system.
-
-Tested with N = 1 for --skip-frames
-
-| Video File    | Original Solution Accuracy | Original Solution Time | Frame Skipped Accuracy | Frame Skipped Time |
-| ------------- | -------------------------- | ---------------------- | ---------------------- | ------------------ |
-| 4p1b_01A2.m4v | 93%                        | 65.839 s               | ERROR                  | 42.097 s           |
-| 5p2b_01A1.m4v | 93%                        | 134.788 s              | 82%                    | 86.795 s           |
-| 5p4b_01A2.m4v | 92%                        | 87.064 s               | 88%                    | 41.653 s           |
-| 5p5b_03A1.m4v | 48%                        | 80.131 s               | 48%                    | 51.083 s           |
-| 7p3b_02M.m4v  |                            |                        |                        |                    |
 
 
 # Run
