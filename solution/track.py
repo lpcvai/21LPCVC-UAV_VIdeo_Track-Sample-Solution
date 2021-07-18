@@ -31,6 +31,7 @@ import yaml
 import solution
 
 
+
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 id_mapping = {}
 groundtruths_path = None
@@ -56,12 +57,16 @@ def bbox_rel(image_width, image_height,  *xyxy):
     return x_c, y_c, w, h
 
 
+
+
 def compute_color_for_labels(label):
     """
     Simple function that adds fixed color depending on the class
     """
     color = [int((p * (label ** 2 - label + 1)) % 255) for p in palette]
     return tuple(color)
+
+
 
 
 def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offset=(0,0)):
@@ -87,6 +92,8 @@ def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offse
         cv2.putText(img, label, (x1, y1 + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
 
 
+
+
 def detect(opt, device, save_img=False):
     out, source, weights, view_img, save_txt, imgsz, skipLimit = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.skip_frames
@@ -98,7 +105,6 @@ def detect(opt, device, save_img=False):
     fpses = []
     frame_catch_pairs = []
     ball_person_pairs = {}
-    avgtime = []
 
     for color in colorDict:
         ball_person_pairs[color] = 0
@@ -261,7 +267,7 @@ def detect(opt, device, save_img=False):
                         else:
                             mapped_id_list.append(ids)
 
-                    ball_detect, frame_catch_pairs, ball_person_pairs, avgtime = solution.detect_catches(im0, bbox_xyxy, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder, save_img, avgtime)
+                    ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder, save_img)
                     
                     t3 = time_synchronized()
                     draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
@@ -311,8 +317,7 @@ def detect(opt, device, save_img=False):
     avgFps = (sum(fpses) / len(fpses))
     print('Average FPS = %.2f' % avgFps)
     #print('Total Runtime = %.2f' % (t4 - t0))
-    avgtime = sum(avgtime) / len(avgtime)
-    print('Average detech_catches Time = %.2f' % avgtime)
+
     
     outpath = os.path.basename(source)
     outpath = outpath[:-4]
@@ -324,6 +329,8 @@ def detect(opt, device, save_img=False):
         print('Results saved to %s' % os.getcwd() + os.sep + out)
         if platform == 'darwin':  # MacOS
             os.system('open ' + save_path)
+
+
 
 def run(vid_src, grd_src):
     parser = argparse.ArgumentParser()
@@ -397,9 +404,9 @@ if __name__ == '__main__':
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     #Color tolerance for tracking 
-    hueOffset = 2
+    hueOffset = 1
     satOffset = 50
-    valOffset = 50
+    valOffset = 20
 
     clr_offs = (hueOffset, satOffset, valOffset)
     
