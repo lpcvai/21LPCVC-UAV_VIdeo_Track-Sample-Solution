@@ -390,8 +390,8 @@ def default_colorDict():
 
     #Tolerance / range for each color
     hueOffset = 9
-    satOffset = 25
-    valOffset = 25
+    satOffset = 50
+    valOffset = 50
 
     #BGR Values for each color tested
     yellowBGR = np.uint8([[[ 81, 205, 217]]])
