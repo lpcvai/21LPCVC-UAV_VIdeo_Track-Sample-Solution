@@ -30,6 +30,7 @@ import yaml
 import solution
 
 
+
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 id_mapping = {}
 groundtruths_path = None
@@ -55,12 +56,16 @@ def bbox_rel(image_width, image_height,  *xyxy):
     return x_c, y_c, w, h
 
 
+
+
 def compute_color_for_labels(label):
     """
     Simple function that adds fixed color depending on the class
     """
     color = [int((p * (label ** 2 - label + 1)) % 255) for p in palette]
     return tuple(color)
+
+
 
 
 def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offset=(0,0)):
@@ -84,6 +89,8 @@ def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offse
         cv2.rectangle(img, (x1, y1),(x2,y2), color, 3)
         cv2.rectangle(img, (x1, y1), (x1 + t_size[0] + 3, y1 + t_size[1] + 4), color, -1)
         cv2.putText(img, label, (x1, y1 + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
+
+
 
 
 def detect(opt, device, save_img=False):
@@ -152,7 +159,7 @@ def detect(opt, device, save_img=False):
     # Run inference
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
-    t0 = time.time()
+    t0 = time.perf_counter()
 
     #Skip Variables
     skipThreshold = 0 #Current number of frames skipped
@@ -309,6 +316,7 @@ def detect(opt, device, save_img=False):
     avgFps = (sum(fpses) / len(fpses))
     print('Average FPS = %.2f' % avgFps)
     #print('Total Runtime = %.2f' % (t4 - t0))
+
     
     outpath = os.path.basename(source)
     outpath = outpath[:-4]
@@ -320,6 +328,8 @@ def detect(opt, device, save_img=False):
         print('Results saved to %s' % os.getcwd() + os.sep + out)
         if platform == 'darwin':  # MacOS
             os.system('open ' + save_path)
+
+
 
 def run(vid_src, grd_src):
     parser = argparse.ArgumentParser()
@@ -393,9 +403,9 @@ if __name__ == '__main__':
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     #Color tolerance for tracking 
-    hueOffset = 2
+    hueOffset = 1
     satOffset = 50
-    valOffset = 50
+    valOffset = 20
 
     clr_offs = (hueOffset, satOffset, valOffset)
     
