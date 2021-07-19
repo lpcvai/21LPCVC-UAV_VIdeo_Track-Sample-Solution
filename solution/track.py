@@ -1,8 +1,5 @@
-import argparse
 import os
 import platform
-import shutil
-import time
 from pathlib import Path
 
 import cv2
@@ -19,91 +16,32 @@ sys.path.insert(0, dir_path+'/yolov5')
 from yolov5.models.experimental import attempt_load
 from yolov5.utils.datasets import LoadStreams, LoadImages
 from yolov5.utils.general import (
-    check_img_size, non_max_suppression, apply_classifier, scale_coords, xyxy2xywh, strip_optimizer)
-from yolov5.utils.torch_utils import select_device, load_classifier, time_synchronized
-from yolov5.utils.plots import plot_one_box
-
+    check_img_size, non_max_suppression, apply_classifier, scale_coords, xyxy2xywh)
+from yolov5.utils.torch_utils import load_classifier, time_synchronized
 from deep_sort.utils.parser import get_config
 from deep_sort.deep_sort import DeepSort
 
 import yaml
 import solution
-
+import main 
 
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
-id_mapping = {}
-groundtruths_path = None
-device = None
-half = None
-
-hueOffset = None
-satOffset = None
-valOffset = None
-clr_offs = None
-colorDict = None
-
-def bbox_rel(image_width, image_height,  *xyxy):
-    """" Calculates the relative bounding box from absolute pixel values. """
-    bbox_left = min([xyxy[0].item(), xyxy[2].item()])
-    bbox_top = min([xyxy[1].item(), xyxy[3].item()])
-    bbox_w = abs(xyxy[0].item() - xyxy[2].item())
-    bbox_h = abs(xyxy[1].item() - xyxy[3].item())
-    x_c = (bbox_left + bbox_w / 2)
-    y_c = (bbox_top + bbox_h / 2)
-    w = bbox_w
-    h = bbox_h
-    return x_c, y_c, w, h
 
 
-
-
-def compute_color_for_labels(label):
-    """
-    Simple function that adds fixed color depending on the class
-    """
-    color = [int((p * (label ** 2 - label + 1)) % 255) for p in palette]
-    return tuple(color)
-
-
-
-
-def draw_boxes(img, bbox, cls_names, scores, ball_detect, identities=None, offset=(0,0)):
-    for i, box in enumerate(bbox):
-        x1, y1, x2, y2 = [int(i) for i in box]
-        x1 += offset[0]
-        x2 += offset[0]
-        y1 += offset[1]
-        y2 += offset[1]
-        # Contributor YKS
-        
-        try:
-            id = int(id_mapping[identities[i]]) if identities is not None else 0    
-        except KeyError:
-            id = int(identities[i]) if identities is not None else 0    
-            
-        color = compute_color_for_labels(id)
-        label = '%s %d %s %d' % (ball_detect[i], id, cls_names[i], scores[i])
-        label += '%'
-        t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 2 , 2)[0]
-        cv2.rectangle(img, (x1, y1),(x2,y2), color, 3)
-        cv2.rectangle(img, (x1, y1), (x1 + t_size[0] + 3, y1 + t_size[1] + 4), color, -1)
-        cv2.putText(img, label, (x1, y1 + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
-
-
-
-
-def detect(opt, device, save_img=False):
+def detect(opt, device, half, colorDict, save_img=False):
     out, source, weights, view_img, save_txt, imgsz, skipLimit = \
         opt.output, opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.skip_frames
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
+    groundtruths_path = opt.groundtruths
     colorOrder = ['red', 'purple', 'blue', 'green', 'yellow', 'orange']
     frame_num = 0
     framestr = 'Frame {frame}'
     fpses = []
     frame_catch_pairs = []
     ball_person_pairs = {}
+    id_mapping = {}
 
     for color in colorDict:
         ball_person_pairs[color] = 0
@@ -126,8 +64,6 @@ def detect(opt, device, save_img=False):
     # Initialize
     if not os.path.exists(out):
         os.makedirs(out)  # make new output folder
-        # shutil.rmtree(out)  # delete output folder
-    # os.makedirs(out)  # make new output folder
 
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -159,19 +95,16 @@ def detect(opt, device, save_img=False):
     # Run inference
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
-    t0 = time.perf_counter()
 
     #Skip Variables
     skipThreshold = 0 #Current number of frames skipped
     
     for path, img, im0s, vid_cap in dataset:
-
         if frame_num > 10 and skipThreshold < skipLimit:
             skipThreshold = skipThreshold + 1
             frame_num += 1
             continue
         
-
         skipThreshold = 0
 
         img = torch.from_numpy(img).to(device)
@@ -186,7 +119,6 @@ def detect(opt, device, save_img=False):
 
         # Apply NMS
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
-        t2 = time_synchronized()
 
         # Apply Classifier
         if classify:
@@ -207,7 +139,6 @@ def detect(opt, device, save_img=False):
             if det is not None and len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
-
                 bbox_xywh = []
                 confs = []
                 clses = []
@@ -216,7 +147,7 @@ def detect(opt, device, save_img=False):
                 for *xyxy, conf, cls in det:
                     
                     img_h, img_w, _ = im0.shape  # get image shape
-                    x_c, y_c, bbox_w, bbox_h = bbox_rel(img_w, img_h, *xyxy)
+                    x_c, y_c, bbox_w, bbox_h = main.bbox_rel(img_w, img_h, *xyxy)
                     obj = [x_c, y_c, bbox_w, bbox_h]
                     bbox_xywh.append(obj)
                     confs.append([conf.item()])
@@ -227,7 +158,6 @@ def detect(opt, device, save_img=False):
                 clses = torch.Tensor(clses)
                 # Pass detections to deepsort
                 outputs = []
-                global groundtruths_path
                 if not 'disable' in groundtruths_path:
                     # print('\nenabled', groundtruths_path)
                     groundtruths = solution.load_labels(groundtruths_path, img_w,img_h, frame_num)
@@ -267,17 +197,12 @@ def detect(opt, device, save_img=False):
                             mapped_id_list.append(ids)
 
                     ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_xyxy, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder, save_img)
-                    
+    
                     t3 = time_synchronized()
-                    draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, identities)
+                    if (save_img):
+                        main.draw_boxes(im0, bbox_xyxy, [names[i] for i in clses], scores, ball_detect, id_mapping, identities)
                 else:
                     t3 = time_synchronized()
-
-
-            #Draw frame number
-            tmp = framestr.format(frame = frame_num)
-            t_size = cv2.getTextSize(tmp, cv2.FONT_HERSHEY_PLAIN, 2 , 2)[0]
-            cv2.putText(im0, tmp, (0, (t_size[1] + 10)), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
 
 
             #Inference Time
@@ -297,6 +222,11 @@ def detect(opt, device, save_img=False):
                 if dataset.mode == 'images':
                     cv2.imwrite(save_path, im0)
                 else:
+                    #Draw frame number
+                    tmp = framestr.format(frame = frame_num)
+                    t_size = cv2.getTextSize(tmp, cv2.FONT_HERSHEY_PLAIN, 2 , 2)[0]
+                    cv2.putText(im0, tmp, (0, (t_size[1] + 10)), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
+
                     if vid_path != save_path:  # new video
                         vid_path = save_path
                         if isinstance(vid_writer, cv2.VideoWriter):
@@ -310,14 +240,10 @@ def detect(opt, device, save_img=False):
             frame_num += 1
                     
         
-        
-
-    #t4 = time_synchronized()
     avgFps = (sum(fpses) / len(fpses))
     print('Average FPS = %.2f' % avgFps)
-    #print('Total Runtime = %.2f' % (t4 - t0))
 
-    
+
     outpath = os.path.basename(source)
     outpath = outpath[:-4]
     outpath = out + '/' + outpath + '_out.csv'
@@ -329,87 +255,4 @@ def detect(opt, device, save_img=False):
         if platform == 'darwin':  # MacOS
             os.system('open ' + save_path)
 
-
-
-def run(vid_src, grd_src):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default=dir_path + '/yolov5/weights/best.pt', help='model.pt path')
-    parser.add_argument('--data', type=str, default=dir_path + '/ballPerson.yaml', help='data yaml path')
-    parser.add_argument('--source', type=str, default=dir_path + '/inference/images', help='source')
-    parser.add_argument('--output', type=str, default=dir_path + '/outputs', help='output folder')
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
-    parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='display results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--classes', nargs='+', type=int, default=[0, 1], help='filter by class') #Default [0]
-    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--augment', action='store_true', help='augmented inference')
-    parser.add_argument("--config_deepsort", type=str, default=dir_path + "/deep_sort/configs/deep_sort.yaml")
-    parser.add_argument('--groundtruths', default= dir_path + '/inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
-    parser.add_argument('--save-img', action='store_true', help='save video to outputs')
-    parser.add_argument('--skip-frames', type=int, default=1, help='number of frames skipped after each frame scanned')
-    args = parser.parse_args(args=['--source', vid_src, '--groundtruths', grd_src, '--output', './outputs'])
-    args.img_size = check_img_size(args.img_size)
-
-    global groundtruths_path, device, half, hueOffset, satOffset, valOffset, clr_offs, colorDict
-    groundtruths_path = args.groundtruths
-    
-    # Select GPU
-    device = select_device(args.device)
-    half = device.type != 'cpu'  # half precision only supported on CUDA
-
-    #Color tolerance for tracking 
-    hueOffset = 2
-    satOffset = 50
-    valOffset = 50
-
-    clr_offs = (hueOffset, satOffset, valOffset)
-    
-    colorDict = solution.generateDynColorDict(groundtruths_path, clr_offs, args)
-
-    with torch.no_grad():
-        detect(args, device, save_img=False)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default=dir_path + '/yolov5/weights/best.pt', help='model.pt path')
-    parser.add_argument('--data', type=str, default=dir_path + '/ballPerson.yaml', help='data yaml path')
-    parser.add_argument('--source', type=str, default=dir_path + '/inference/images', help='source')
-    parser.add_argument('--output', type=str, default=dir_path + '/outputs', help='output folder')
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.4, help='object confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
-    parser.add_argument('--fourcc', type=str, default='mp4v', help='output video codec (verify ffmpeg support)')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--view-img', action='store_true', help='display results')
-    parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--classes', nargs='+', type=int, default=[0, 1], help='filter by class') #Default [0]
-    parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-    parser.add_argument('--augment', action='store_true', help='augmented inference')
-    parser.add_argument("--config_deepsort", type=str, default=dir_path + "/deep_sort/configs/deep_sort.yaml")
-    parser.add_argument('--groundtruths', default= dir_path + '/inputs/groundtruths.txt', help='path to the groundtruths.txt or \'disable\'')
-    parser.add_argument('--save-img', action='store_true', help='save video to outputs')
-    parser.add_argument('--skip-frames', type=int, default=1, help='number of frames skipped after each frame scanned')
-    args = parser.parse_args()
-    args.img_size = check_img_size(args.img_size)
-
-    groundtruths_path = args.groundtruths
-    
-    # Select GPU
-    device = select_device(args.device)
-    half = device.type != 'cpu'  # half precision only supported on CUDA
-
-    #Color tolerance for tracking 
-    hueOffset = 1
-    satOffset = 50
-    valOffset = 20
-
-    clr_offs = (hueOffset, satOffset, valOffset)
-    
-    colorDict = solution.generateDynColorDict(groundtruths_path, clr_offs, args)
-
-    with torch.no_grad():
-        detect(args, device, save_img=args.save_img)
+    return
