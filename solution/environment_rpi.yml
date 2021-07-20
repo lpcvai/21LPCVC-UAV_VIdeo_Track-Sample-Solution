@@ -13,7 +13,6 @@ dependencies:
   - tensorboard
   - tqdm
 
-  - wandb
   - seaborn
   - pandas
   - easydict
