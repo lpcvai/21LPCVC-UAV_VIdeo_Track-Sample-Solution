@@ -21,6 +21,10 @@
       ```
       conda env create -f environment_nocuda.yml     
       ```
+    * __For Raspberry Pi 3B+ with Fedora & Miniforge__
+      ```
+      conda env create -f environment_rpi.yml     
+      ```
 3. Activate conda environment
     ```
     conda activate SampleSolution
@@ -85,7 +89,7 @@ They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/che
 
 # Run
 ~~~
-python3 track.py --source VIDEOSOURCE --groundtruths PATHTOCSV --save-img --skip-frames NUMOFFRAMES
+python3 main.py --source VIDEOSOURCE --groundtruths PATHTOCSV --skip-frames NUMOFFRAMES
 ~~~
 
 ## References
