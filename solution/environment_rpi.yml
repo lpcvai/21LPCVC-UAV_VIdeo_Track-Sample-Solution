@@ -1,0 +1,23 @@
+name: SampleSolution
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+
+  - matplotlib
+  - numpy
+  - pillow>=8.1.2
+  - pyyaml
+  - scipy
+  - tensorboard
+  - tqdm
+
+  - seaborn
+  - pandas
+  - easydict
+
+  - pip:
+    - torch==1.8.0 -f https://download.pytorch.org/whl/torch_stable.html
+    - torchvision==0.9.1 -f https://download.pytorch.org/whl/torch_stable.html
+    - opencv-contrib-python-headless>=4.1.2

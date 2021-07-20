@@ -10,3 +10,4 @@ inputs/*
 .DS_Store
 *.pt
 *.t7
+*.lprof

@@ -7,8 +7,6 @@ import statistics
 from os import path
 from yolov5.utils.datasets import LoadImages
 
-
-import time
 #Constants
 current_file_name = ''
 current_file_data = None
@@ -55,6 +53,7 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
     frame = current_file_data[(current_file_data["Frame"]==frame_number)]
     pt_frame = torch.tensor(frame[["Class","ID","X","Y","Width","Height"]].values)
     return pt_frame
+
 
 
 
@@ -331,7 +330,7 @@ def write_catches(output_path, frame_catch_pairs, colorOrder):
         
 
 
-    
+
 def smooth_frame_pairs(frame_catch_pairs):
     max_diff = 5 
     size = len(frame_catch_pairs)
@@ -433,6 +432,7 @@ def default_colorDict():
 
 
 
+
 def generateDynColorDict(groundtruths_path, clr_offs, args):
     dataset = LoadImages(args.source, img_size=args.img_size)
     frame_num = 0
@@ -488,6 +488,7 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
 
 
 
+
 def create_dyn_dict(color_arr, detected_ball_colors, offsets, num_balls):
     hueOffset = offsets[0]
     satOffset = offsets[1]
@@ -505,6 +506,7 @@ def create_dyn_dict(color_arr, detected_ball_colors, offsets, num_balls):
         dyn_colorDict[color_arr[i]] = [upper, lower]
 
     return dyn_colorDict
+
 
 
 
@@ -539,6 +541,7 @@ def get_colors(colorDict, area_colors, det_clr):
     colorVals = tuple([int(sum(clmn) / len(valid_areas)) for clmn in zip(*valid_areas)])
 
     return most_color, colorVals
+
 
 
 
