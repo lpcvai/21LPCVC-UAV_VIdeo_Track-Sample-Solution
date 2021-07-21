@@ -27,7 +27,7 @@ from deep_sort.deep_sort import DeepSort
 
 import yaml
 import solution
-
+from solution import Track
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 id_mapping = {}
@@ -89,6 +89,8 @@ def detect(opt, device, save_img=False):
     fpses = []
     frame_catch_pairs = []
     ball_person_pairs = {}
+    active_tracks = []
+    prev_frame = None
 
     for color in colorDict:
         ball_person_pairs[color] = 0
@@ -156,6 +158,14 @@ def detect(opt, device, save_img=False):
             t_size = cv2.getTextSize(tmp, cv2.FONT_HERSHEY_PLAIN, 2 , 2)[0]
             cv2.putText(im0, tmp, (0, (t_size[1] + 10)), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
 
+            #Run bounding box predictions on tracks using optical flow
+            for track in active_tracks:
+                track.predict_bbox(prev_frame, img)
+
+            #For each track, run catch detections
+                
+            #Draw boxes for visualization
+                
             if view_img:
                 cv2.imshow(p, im0)
                 if cv2.waitKey(1) == ord('q'):  # q to quit
@@ -257,6 +267,19 @@ def detect(opt, device, save_img=False):
                             for DS_ID in xyxy2xywh(outputs[:, :5]):
                                 if (abs(DS_ID[0]-real_ID[1])/img_w < 0.005) and (abs(DS_ID[1]-real_ID[2])/img_h < 0.005) and (abs(DS_ID[2]-real_ID[3])/img_w < 0.005) and(abs(DS_ID[3]-real_ID[4])/img_w < 0.005):
                                     id_mapping[DS_ID[4]] = int(real_ID[0])
+
+                    if frame_num == 10:
+                        #Initialize tracking objects
+                        bbox_xyxy = outputs[:, :4]
+                        identities = outputs[:, 4]
+                        clses = outputs[:, 5]
+                        #scores = outputs[:, 6]
+
+                        for i in range(len(clses)):
+                            track = Track(clses[i], identities[i], "", bbox_xyxy[i], isActive=True, featPoints=None)
+                            active_tracks.append(track)
+                        
+                                    
                 else:
                     outputs = deepsort.update(xywhs, confss, clses, im0)
 
@@ -317,7 +340,9 @@ def detect(opt, device, save_img=False):
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*opt.fourcc), fps, (w, h))
                     vid_writer.write(im0)
+
             frame_num += 1
+            prev_frame = img
                     
         
         
