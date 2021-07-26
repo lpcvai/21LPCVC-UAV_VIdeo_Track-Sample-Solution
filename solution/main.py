@@ -92,7 +92,7 @@ def default_parser():
 
 
 
-def main(vid_src, grd_src):
+def main(vid_src=None, grd_src=None):
     '''
     Main function that will be ran when performing submission testing. 
     We will provide the path of the video and groundtruths when testing.
@@ -100,6 +100,9 @@ def main(vid_src, grd_src):
     argv[2] = groundtruths path (--groundtruths input)
     '''
     parser = default_parser()
+    if vid_src == None and grd_src == None:
+        vid_src = sys.argv[1]
+        grd_src = sys.argv[2]
     args = parser.parse_args(args=['--source', vid_src, '--groundtruths', grd_src, '--output', './outputs'])
     args.img_size = check_img_size(args.img_size)
     groundtruths_path = args.groundtruths
