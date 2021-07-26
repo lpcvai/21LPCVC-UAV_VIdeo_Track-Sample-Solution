@@ -1,1 +1,1 @@
-python3 -m zipapp sol_v1 -p='/usr/bin/env python3.8'
+python3 -m zipapp solution -p='/usr/bin/env python3.8'
