@@ -9,17 +9,17 @@
 ## Submission Instruction
 _Notice: The names of files or folders are sensitive._
 
-Each team should submit only one file: `solution.pyz`: the zipped package of `solution/`. You should use __[zipapp](https://docs.python.org/3/library/zipapp.html)__ to create the `.pyz` file from your solution folder.
+Each team should submit only one file, `solution.pyz`: the zipped package of `solution/`. You should use __[zipapp](https://docs.python.org/3/library/zipapp.html)__ to create the `.pyz` file from your solution folder.
 ```
 └── solution/
-    ├── requirements.txt
+    ├── environment.yml
     ├── __main__.py
     ├── main.py
     └── other modules and resources
 ```
-* `requirements.txt`: Include all your dependencies. Make sure their versions are compatible on the Raspberry Pi .
+* `environment.yml`: Include all your dependencies. Make sure their versions are compatible on the Raspberry Pi .
 * `__main__.py`: Used to run `solution/`. DO NOT modify.
-* `main.py`: The script that we will use to execute your solution. Details are listed in the comments inside.
+* `main.py`: The script that we will use to execute your solution. 
 * `other modules and resources` (optional): Any other modules that `main.py` needs to import and any other files that you use in your solution.
 
 ### Creating `.pyz` files
@@ -44,8 +44,9 @@ We will run your code using the follow command:
 ```
   $ unzip solution.pyz -d solution/
   $ cd solution/
-  $ pip3 install -r requirements.txt
+  $ conda env create -f environment.yml --name [ENV_NAME]
   $ cd ../
+  $ conda activate [ENV_NAME]
   $ python3 solution/ [video].mp4 in_[video].csv
 ```
 
