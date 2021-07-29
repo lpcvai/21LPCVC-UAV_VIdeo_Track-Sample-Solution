@@ -41,7 +41,7 @@ There is another model named yolov5l, which utilizes a more complex model for hi
 Make sure to use them to get the best detections.
 The trained weights were created using a [dataset](https://purdue0-my.sharepoint.com/:u:/g/personal/akocher_purdue_edu/EeW4m2AjhuxFhIuwXFQNHcgB87WWzLYq6PVWMri9ZRjHIw?e=18ogEg) containing over 10,000 images. More stats on the dataset can be found in `yolov5/weights/stats.txt`.
 Specific stats about the training session can be viewed [here](https://wandb.ai/dual19/...?workspace=user-dual19) if you're interested.
-Quantization and pruning implementation can be viewed [here](https://github.com/PumeTu/21LPCVC-UAV_VIdeo_Track-Sample-Solution/tree/Quantization).
+Quantization and pruning implementation can be viewed [here](https://github.com/PumeTu/21LPCVC-UAV_VIdeo_Track-Sample-Solution/tree/main/solution).
 
 2. The DeepSORT weights need to be downloaded; they can be found [here](https://purdue0-my.sharepoint.com/:u:/g/personal/hu440_purdue_edu/EYvoc5gij4dNpcGJ5jnBW94BP5H5LU_dcW0dHtm_lX8aBQ?e=s8j3LW).
 They should be called `ckpt.t7` and place it under `deep_sort/deep_sort/deep/checkpoint/`
