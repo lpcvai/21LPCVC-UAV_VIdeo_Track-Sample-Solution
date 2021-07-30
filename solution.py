@@ -12,30 +12,7 @@ from yolov5.utils.datasets import LoadImages
 current_file_name = ''
 current_file_data = None
 
-class Track:
-    def __init__(self, tType, tID, tColor, bbox, isActive, featPoints):
-        self.tType = tType
-        self.tID = tID
-        self.tColor = tColor
-        self.bbox = bbox
-        self.isActive = None
-        self.featPoints = None
-        
-    def print(self):
-        print('type: ' + self.tType)
-        print('id: ' + str(self.tID))
-        print('color: ' + self.tColor)
-        print('bbox: ' + str(self.bbox))
-        print('isActive: ' + str(self.isActive))
-        print('featPoints: ' + str(self.featPoints))
 
-    def predict_bbox(self, img_old, img):
-        lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
-        featPointsOldAvg = np.mean(self.featPoints, axis=0)
-        self.featPoints, st, err = cv2.calcOpticalFlowPyrLK(img_old, img, self.featPoints, None, **lk_params) # update self.featPoints
-        featPointsNewAvg = np.mean(self.featPoints, axis=0)
-        flow = np.subtract(featPointsNewAvg, featPointsOldAvg)
-        self.bbox = np.add(self.bbox, np.concatenate([flow, np.zeros(2)]))
 
 #Input Functions for Sample Solution
 def load_labels(file_name, image_width, image_height, frame_number=-1):
@@ -633,3 +610,29 @@ def draw_testingboxes(img, bbox):
 
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
     return
+
+
+
+class Track:
+    def __init__(self, tType, tID, bbox,featPoints):
+        self.tType = tType
+        self.tID = tID
+        self.bbox = bbox
+        self.featPoints = featPoints
+    
+    def predict_bbox(self, img_old, img):
+        if self.featPoints != []:
+            #Calculate flow for all feature points
+            lk_params = dict(winSize = (15,15), maxLevel = 2, criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+            oldfeatPointsAVG = np.mean(self.featPoints,axis=0)  #average coordinates of old featpoints
+            self.featPoints, st, err = cv2.calcOpticalFlowPyrLK(img_old, img, self.featPoints, None, **lk_params)
+            #average all flow of the feature points for flow of the bbox
+            newfeatPoints =np.mean(self.featPoints,axis=0)       #average coordinates of new featpoints
+            #creating new predicted bbox
+            flow = newfeatPoints - oldfeatPointsAVG            #flow of the bounding box
+            self.bbox = self.bbox + [flow[0][0],flow[0][1],0,0]
+
+    #def detection(self):
+        #
+        # get David to help figure out this section
+        # 

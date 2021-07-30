@@ -27,7 +27,7 @@ from deep_sort.deep_sort import DeepSort
 
 import yaml
 import solution
-from solution import Track
+from solutionCopy import Track
 
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 id_mapping = {}
@@ -89,8 +89,6 @@ def detect(opt, device, save_img=False):
     fpses = []
     frame_catch_pairs = []
     ball_person_pairs = {}
-    active_tracks = []
-    prev_frame = None
 
     for color in colorDict:
         ball_person_pairs[color] = 0
@@ -149,23 +147,66 @@ def detect(opt, device, save_img=False):
 
     #Skip Variables
     skipThreshold = 0 #Current number of frames skipped
-    
-    for path, img, im0s, vid_cap in dataset:
 
-        if frame_num > 10 and skipThreshold < skipLimit:
+
+    for path, img, im0s, vid_cap in dataset:
+        """
+        path: path to the image
+        img: current image
+        im0s: original image with additional drawn bounding boxes
+        vid_cap: an opencv .VideoCapture
+        """ 
+        img_clone = cv2.resize(im0s,(640,360))
+        img_clone_np = np.asarray(img_clone)
+        #img_clone_np = np.swapaxes(img_clone_np, 0, -1)
+        #img_clone_np = np.swapaxes(img_clone_np, 0, 1)
+        img_clone_np = cv2.cvtColor(img_clone_np, cv2.COLOR_BGR2GRAY)
+        """
+        if frame_num == 11: # create list of Track objects; uses bbox_xywh of the 10th frame
+            tList = np.empty([1,len(bbox_xywh)]) #create empty array for track objects
+            for bbox in bbox_xywh:
+                tType =  # get David to help figure out this section
+                tID =    # get David to help figure out this section
+                tColor = # get David to help figure out this section
+                tObj = Track(tType, tID, tColor, bbox)
+                tList = np.append(tList, tObj)
+                countinue
+        """
+            
+        ## skipped frame
+        if frame_num > 10 and skipThreshold < skipLimit: 
             p, s, im0 = path, '', im0s
+            skipThreshold += 1
+            frame_num += 1
+            '''
+            bbox_predicted = [] #or np.empty((0,4), int)
+            clses = []
+            identities = []
+            for i in tList:
+                if(i.tType==1):
+                    i.predict_bbox(img_old_np, img_clone_np)
+                    bbox_predicted.append(i.bbox*6)
+                    clses.append(i.tType)
+                    identities.append(i.tID)
+                else:
+                    bbox_predicted.append(i.bbox*6)
+                    clses.append(i.tType)
+                    identities.append(i.tID)
+            
+            
+            mapped_id_list = []
+            for ids in identities:
+                if(ids in id_mapping):
+                    mapped_id_list.append(int(id_mapping[ids]))
+                else:
+                    mapped_id_list.append(ids)
+            img_old_np = img_clone_np
+            ball_detect, frame_catch_pairs, ball_person_pairs = solution.detect_catches(im0, bbox_predicted, clses, mapped_id_list, frame_num, colorDict, frame_catch_pairs, ball_person_pairs, colorOrder, save_img)
+            draw_boxes(im0, bbox_predicted, [names[i] for i in clses], scores, ball_detect, identities)
             tmp = framestr.format(frame = frame_num)
             t_size = cv2.getTextSize(tmp, cv2.FONT_HERSHEY_PLAIN, 2 , 2)[0]
             cv2.putText(im0, tmp, (0, (t_size[1] + 10)), cv2.FONT_HERSHEY_PLAIN, 2, [255, 255, 255], 2)
-
-            #Run bounding box predictions on tracks using optical flow
-            for track in active_tracks:
-                track.predict_bbox(prev_frame, img)
-
-            #For each track, run catch detections
-                
-            #Draw boxes for visualization
-                
+            
             if view_img:
                 cv2.imshow(p, im0)
                 if cv2.waitKey(1) == ord('q'):  # q to quit
@@ -185,13 +226,11 @@ def detect(opt, device, save_img=False):
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*opt.fourcc), fps, (w, h))
                     vid_writer.write(im0)
-            
-
-            skipThreshold = skipThreshold + 1
-            frame_num += 1
+            '''
             continue
-        
 
+        ##Non-skipped frame
+        img_old_np = img_clone 
         skipThreshold = 0
 
         img = torch.from_numpy(img).to(device)
@@ -231,7 +270,7 @@ def detect(opt, device, save_img=False):
                 bbox_xywh = []
                 confs = []
                 clses = []
-
+                tList = np.empty([1,9]) #create empty array for track objects
                 # Write results
                 for *xyxy, conf, cls in det:
                     
@@ -241,6 +280,8 @@ def detect(opt, device, save_img=False):
                     bbox_xywh.append(obj)
                     confs.append([conf.item()])
                     clses.append([cls.item()])
+                    
+              
                     
                 xywhs = torch.Tensor(bbox_xywh)
                 confss = torch.Tensor(confs)
@@ -267,22 +308,8 @@ def detect(opt, device, save_img=False):
                             for DS_ID in xyxy2xywh(outputs[:, :5]):
                                 if (abs(DS_ID[0]-real_ID[1])/img_w < 0.005) and (abs(DS_ID[1]-real_ID[2])/img_h < 0.005) and (abs(DS_ID[2]-real_ID[3])/img_w < 0.005) and(abs(DS_ID[3]-real_ID[4])/img_w < 0.005):
                                     id_mapping[DS_ID[4]] = int(real_ID[0])
-
-                    if frame_num == 10:
-                        #Initialize tracking objects
-                        bbox_xyxy = outputs[:, :4]
-                        identities = outputs[:, 4]
-                        clses = outputs[:, 5]
-                        #scores = outputs[:, 6]
-
-                        for i in range(len(clses)):
-                            track = Track(clses[i], identities[i], "", bbox_xyxy[i], isActive=True, featPoints=None)
-                            active_tracks.append(track)
-                        
-                                    
                 else:
                     outputs = deepsort.update(xywhs, confss, clses, im0)
-
 
                 # draw boxes for visualization
                 if len(outputs) > 0:
@@ -341,8 +368,28 @@ def detect(opt, device, save_img=False):
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*opt.fourcc), fps, (w, h))
                     vid_writer.write(im0)
 
+            if frame_num >= 10:
+                #use bbox_xywh to update object.bbox
+                tList = []
+                img_old_np = img_clone_np
+                fast = cv2.FastFeatureDetector_create(1)
+                for i in range(len(clses)): #SUBJECT TO CHANGE loop through each object
+                        tType = clses[i]
+                        tID = identities[i]
+                        bbox = bbox_xyxy[i]/6
+                        frameCrop = img_old_np[int(bbox[1]):int(bbox[1]+bbox[3]),int(bbox[0]):int(bbox[0]+bbox[2])]
+                        featPoints  = fast.detect(frameCrop, None)
+                        featPoints = np.float32([kp.pt for kp in featPoints])
+                    #adjust coordinates with bounding box
+                        adj = [bbox[0], bbox[1]]
+                        if featPoints.shape != (0,):
+                            featPoints += adj
+                            featPoints = np.expand_dims(featPoints, axis=1)
+                        else:
+                            featPoints = []
+                        tObj = Track(tType, tID, bbox,featPoints)
+                        tList = np.append(tList, tObj)
             frame_num += 1
-            prev_frame = img
                     
         
         
