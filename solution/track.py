@@ -248,7 +248,7 @@ def detect(opt, device, half, colorDict, save_img=False):
     outpath = outpath[:-4]
     outpath = out + '/' + outpath + '_out.csv'
     print(outpath)
-    solution.write_catches(outpath, frame_catch_pairs, colorOrder)
+    solution.write_catches(outpath, frame_catch_pairs, colorOrder, colorDict)
 
     if save_txt or save_img:
         print('Results saved to %s' % os.getcwd() + os.sep + out)

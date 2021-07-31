@@ -314,11 +314,14 @@ def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pair
 
 
 
-def write_catches(output_path, frame_catch_pairs, colorOrder):
-    colorOrder.insert(0, "frame")
+def write_catches(output_path, frame_catch_pairs, colorOrder, colorDict):
     with open(output_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(colorOrder)
+        possible_clrs = colorDict.keys()
+        ball_ids = [colorDict[color][2] for color in possible_clrs]
+        ball_ids.sort()
+        ball_ids.insert(0, "frame")
+        writer.writerow(ball_ids)
         frame_catch_pairs = smooth_frame_pairs(frame_catch_pairs)
         for i in range(len(frame_catch_pairs)):
             frame = frame_catch_pairs[i][0]
@@ -437,6 +440,7 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
     dataset = LoadImages(args.source, img_size=args.img_size)
     frame_num = 0
     detected_ball_colors = {}
+    detected_ball_ids = {}
     bbox_offset = 5
     cross_size = 3
     #view_gt = False
@@ -452,16 +456,18 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
         bbox_XYranges = gtballs_2XYranges(groundtruths)
         
         for bbox in bbox_XYranges:
+            bbox_id = bbox[4]
             area_colors = get_roi_colors(im0, bbox, bbox_offset, cross_size, False)
             color, colorVals = get_colors(static_colorDict, area_colors, det_clr)
             
             if (color != 'NULL'):
                 det_clr.append(color)
-
                 if (color not in detected_ball_colors):
                     detected_ball_colors[color] = [colorVals]
+                    detected_ball_ids[color]    = [bbox_id]
                 else:
                     detected_ball_colors[color].append(colorVals)
+                    detected_ball_ids[color].append(bbox_id)
 
         if (frame_num == 10):
             frame_num = int((dataset.nframes / 2) - 5)
@@ -471,7 +477,7 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
 
     num_balls = len(bbox_XYranges)
     num_colors = len(detected_ball_colors)
-    color_arr = np.empty(num_colors, dtype='U10')
+    color_arr = np.empty(num_colors, dtype="U10")
     len_pairs = np.empty(num_colors, dtype=np.int32)
 
     i = 0
@@ -481,7 +487,7 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
         i += 1
     
     color_arr = color_arr[np.argsort(-1*len_pairs, axis=0)]
-    dyn_colorDict = create_dyn_dict(color_arr, detected_ball_colors, clr_offs, num_balls)
+    dyn_colorDict = create_dyn_dict(color_arr, detected_ball_colors, detected_ball_ids, clr_offs, num_balls)
 
     print('\nDynamic Dictionary Created...')
     return dyn_colorDict
@@ -489,7 +495,7 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
 
 
 
-def create_dyn_dict(color_arr, detected_ball_colors, offsets, num_balls):
+def create_dyn_dict(color_arr, detected_ball_colors, detected_ball_ids, offsets, num_balls):
     hueOffset = offsets[0]
     satOffset = offsets[1]
     valOffset = offsets[2]
@@ -503,7 +509,9 @@ def create_dyn_dict(color_arr, detected_ball_colors, offsets, num_balls):
         #Create ranges for color
         upper = np.asarray((hsv[0] + hueOffset, hsv[1] + satOffset, hsv[2] + valOffset), dtype=np.int16)
         lower = np.asarray((hsv[0] - hueOffset, hsv[1] - satOffset, hsv[2] - valOffset), dtype=np.int16)
-        dyn_colorDict[color_arr[i]] = [upper, lower]
+        clr_id = detected_ball_ids[color_arr[i]]
+        clr_id = max(clr_id, key = clr_id.count)
+        dyn_colorDict[color_arr[i]] = [upper, lower, clr_id]
 
     return dyn_colorDict
 
@@ -546,6 +554,12 @@ def get_colors(colorDict, area_colors, det_clr):
 
 
 def gtballs_2XYranges(groundtruths):
+    '''
+    Parameter:
+        groundtruths:   pytorch tensor ["Class","ID","X","Y","Width","Height"]
+    Return:
+        bbox_XYranges:  [[X, Y, X_rngs, Y_rngs, id], [X, Y, X_rngs, Y_rngs, id], ...]
+    '''
     bbox_XYranges = []
     for truth in groundtruths:
         #Check if the class is a ball
@@ -557,7 +571,7 @@ def gtballs_2XYranges(groundtruths):
             X_rngs = (int(X - (width/2)), int(X + (width/2)))
             Y_rngs = (int(Y - (height/2)), int(Y + (height/2)))
 
-            bbox_XYranges.append([X, Y, X_rngs, Y_rngs])
+            bbox_XYranges.append([X, Y, X_rngs, Y_rngs, int(truth[1])])
     return bbox_XYranges
 
 
