@@ -35,7 +35,7 @@ def detect(opt, device, half, colorDict, save_img=False):
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
     groundtruths_path = opt.groundtruths
-    colorOrder = ['red', 'purple', 'blue', 'green', 'yellow', 'orange']
+    colorOrder = [color for color in colorDict]
     frame_num = 0
     framestr = 'Frame {frame}'
     fpses = []
@@ -248,7 +248,7 @@ def detect(opt, device, half, colorDict, save_img=False):
     outpath = outpath[:-4]
     outpath = out + '/' + outpath + '_out.csv'
     print(outpath)
-    solution.write_catches(outpath, frame_catch_pairs, colorOrder, colorDict)
+    solution.write_catches(outpath, frame_catch_pairs, colorDict)
 
     if save_txt or save_img:
         print('Results saved to %s' % os.getcwd() + os.sep + out)
