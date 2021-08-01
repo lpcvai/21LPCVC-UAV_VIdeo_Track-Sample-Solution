@@ -137,9 +137,9 @@ if __name__ == '__main__':
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     #Color tolerance for tracking 
-    hueOffset = 1
+    hueOffset = 2
     satOffset = 50
-    valOffset = 20
+    valOffset = 50
     clr_offs = (hueOffset, satOffset, valOffset)
     
     colorDict = solution.generateDynColorDict(groundtruths_path, clr_offs, args)

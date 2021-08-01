@@ -15,47 +15,67 @@ current_file_data = None
 class Ball:
     def __init__(self, id, colorDict):
         self.id = id
+        self.bbox = []
         self.color = ""
         self.color_val = []
         self.color_counts = dict.fromkeys(colorDict.keys(), 0)
+
 
     def __str__(self):
         return "<ID: " + str(self.id) + " Color Counts: " + str(self.color_counts) + " >"
 
 
+    def isID(self, idx):
+        return self.id == idx
+
+
     #Count each area's color
     def get_colors(self, img_data, colorDict):
         for color in colorDict:
-            tmp = (img_data>=colorDict[color][1]) == (img_data<=colorDict[color][0])
-            self.color_counts[color] = np.count_nonzero(tmp.all(axis=-1)) + self.color_counts[color]
+            if color == "red":
+                tmp = (img_data>=colorDict[color][0]) != (img_data<=colorDict[color][1])
+                self.color_counts[color] = np.count_nonzero(tmp[:, 0]) + self.color_counts[color]
+            else:
+                tmp = (img_data>=colorDict[color][1]) == (img_data<=colorDict[color][0])
+                self.color_counts[color] = np.count_nonzero(tmp.all(axis=-1)) + self.color_counts[color]
+        return
 
-    def isID(self, idx):
-        return self.id == idx
+    
                         
     def get_max_clr(self, det_clrs):
         valid_clrs = {}
         for clr in self.color_counts:
             if clr not in det_clrs:
                 valid_clrs[clr] = self.color_counts[clr]
+
+        if len(valid_clrs) == 0:
+            return ("NULL", "NULL")
+
         max_key = max(valid_clrs, key=valid_clrs.get)
         return (max_key, valid_clrs[max_key])
 
+
     def update_color(self, img_data, colorDict):
         valid_areas = []
-        upper = colorDict[self.color][0]
-        lower = colorDict[self.color][1]
-
-        tmp = (img_data>=lower) == (img_data<=upper)
+        tmp = (img_data>=colorDict[self.color][1]) == (img_data<=colorDict[self.color][0])
         valid_areas = img_data[tmp.all(axis=-1)]
-        valid_areas = np.mean(valid_areas, axis=0)
 
-        self.color_val.append(valid_areas)
+        if len(valid_areas) != 0:
+            valid_areas = np.mean(valid_areas, axis=0)
+            self.color_val.append(valid_areas)
         return
 
+
     def finalize_target_color(self):
+        if len(self.color_val) == 0:
+            self.color_val = "NULL"
+            return
         self.color_val = np.mean(np.asarray(self.color_val), axis=0)
         return
 
+
+    def get_detected_bbox_color(self):
+        return [self.color, self.bbox[0], self.bbox[1]]
 
 
 #Input Functions for Sample Solution
@@ -127,24 +147,65 @@ def detect_colors(image, bbox_XYranges, classes, ids, colorDict, save_img):
     #Cross_size is the number of radial members around the center
     #Bbox_offset is the radius of the bbox
     detected_ball_colors = {}
-    det_clr = []
-    bbox_offset = -1
-    size = 5
+    size = 6
+    Ball_list = []
+
 
     for i in range(len(classes)):
         #Checks if the class is a ball (1)
         if (classes[i] == 1): 
+            ball = Ball(ids[i], colorDict)
+            ball.bbox = bbox_XYranges[i]
+
             #Extract region of interest HSV values
-            area_colors = create_grid(image, bbox_offset, bbox_XYranges[i], size, save_img)
+            img_data = create_grid(image, bbox_XYranges[i], size, save_img)
 
-            #Check if the color is in a specified range
-            result, color = check_color(colorDict, area_colors, det_clr)
+            #Update color counts from the bbox
+            ball.get_colors(img_data, colorDict)
+            Ball_list.append(ball)
 
-            if (result == True):
-                det_clr.append(color)
-                detected_ball_colors[ids[i]] = [color, bbox_XYranges[i][0], bbox_XYranges[i][1]]
-          
+    #For each ball in Ball_list, find max detected color out of all the balls and colors
+    Ball_list = assign_colors(Ball_list)
+
+    for ball in Ball_list:
+        detected_ball_colors[ball.id] = ball.get_detected_bbox_color()
+      
     return detected_ball_colors
+
+
+
+
+def assign_colors(Ball_list):
+    '''
+    Parameter:
+        Ball_list: List of ball classes after colors have been counted. [Ball(), Ball(), ...] 
+    Return:
+        Ball_list: List of ball classes after colors have been assigned. [Ball(), Ball(), ...]
+    Description:
+        This function picks the ball with the most colors detected first, removes it from the list, and assigns it a color 
+    '''
+    det_clr = []
+    Ball_list_tmp = []
+    num_balls = len(Ball_list)
+    for i in range(num_balls):
+        max_val = 0
+        max_clr = "NULL"
+
+        for ball in Ball_list:
+            clr, val = ball.get_max_clr(det_clr)
+            if ((val != "NULL") and (val > max_val)):
+                max_ball = ball
+                max_val = val
+                max_clr = clr
+
+        if max_clr == "NULL":
+            return Ball_list_tmp
+
+        max_ball.color = max_clr
+        det_clr.append(max_clr)
+        Ball_list_tmp.append(max_ball)
+        Ball_list.remove(max_ball)
+    return Ball_list_tmp
 
 
 
@@ -163,41 +224,7 @@ def check_color(colorDict, area_colors, det_clr):
 
 
 
-def get_roi_colors(image, bbox_XYranges, bbox_offset, size, save_img):
-    #Get HSV values from image
-    roi_arr = create_grid(image, bbox_offset, bbox_XYranges, size, save_img)
-                
-    #Return if area is 1 pixel
-    if (bbox_offset == -1):
-        return roi_arr
-
-    #Average each area if area is greater than 1 pixel
-    arr_size = len(roi_arr)
-    area_clrs = np.empty((arr_size,  3), dtype=np.uint8)
-
-    for i in range(arr_size):
-        hue = np.mean(roi_arr[i][:,:,0])
-        sat = np.mean(roi_arr[i][:,:,1])
-        val = np.mean(roi_arr[i][:,:,2])
-
-        ball_color = (hue, sat, val)
-        area_clrs[i] = np.asarray(ball_color)
-
-
-    #Sort areas by difference from the mean
-    hues = area_clrs[:,0]
-    avg_hue = int(np.mean(hues))
-    avg_diff = np.absolute(np.subtract(hues, avg_hue, dtype=np.int16))
-    area_clrs = area_clrs[np.argsort(avg_diff, axis=0)]
-
-    area_colors = [(area[0], area[1], area[2]) for area in area_clrs]
-
-    return area_colors
-
-
-
-
-def create_grid(image, bbox_offset, bbox_XYranges, size, save_img):
+def create_grid(image, bbox_XYranges, size, save_img):
     #Creates a crosshair centered in the bbox with seperate areas
     X = bbox_XYranges[0]
     Y = bbox_XYranges[1]
@@ -207,45 +234,23 @@ def create_grid(image, bbox_offset, bbox_XYranges, size, save_img):
     X_step = (bbox_XYranges[2][1] - bbox_XYranges[2][0]) // num_splits
     Y_step = (bbox_XYranges[3][1] - bbox_XYranges[3][0]) // num_splits
 
-    width = (size + size + 1)
-    num_roi =  width * width
     x = size * -1
     y = size * -1
 
     #Create pixel grid
-    if (bbox_offset == -1):
-        x1 = (np.arange(x, size+1) * X_step) + X
-        y1 = (np.arange(y, size+1) * Y_step) + Y
-        roi_arr = np.vstack(cv2.cvtColor(image[y1][:, x1], cv2.COLOR_BGR2HSV))
-    
+    x1 = (np.arange(x, size+1) * X_step) + X
+    y1 = (np.arange(y, size+1) * Y_step) + Y
+    roi_arr = np.vstack(cv2.cvtColor(image[y1][:, x1], cv2.COLOR_BGR2HSV))
 
-    #Create wide grid using old method
-    if (bbox_offset != -1):
-        bbox = []
-        roi_arr = np.empty((num_roi, bbox_offset*2, bbox_offset*2, 3), dtype=np.uint8)
-        for i in range(width):
-            x1 = (x * X_step) + X
-            for j in range(width):
-                y1 = (y * Y_step) + Y
-                ind = (i * width) + j
-                roi_arr[ind] = image[(y1 - bbox_offset):(y1 + bbox_offset), (x1 - bbox_offset):(x1 + bbox_offset)]
-                bbox.append(((x1 - bbox_offset),(y1 - bbox_offset),(x1 + bbox_offset),(y1 + bbox_offset)))
-                y = y + 1
-            y = size * -1
-            x = x + 1
-        #Convert values to HSV
-        for i in range(num_roi):
-            tmp = roi_arr[i]
-            roi_arr[i] = cv2.cvtColor(tmp, cv2.COLOR_BGR2HSV)
-
+    '''
     if (save_img):
-        if (bbox_offset == -1):
-            bbox = []
-            for i in range(width):
-                for j in range(width):
-                    bbox.append((x1[i], y1[j], x1[i], y1[j]))
+        bbox = []
+        for i in range(width):
+            for j in range(width):
+                bbox.append((x1[i], y1[j], x1[i], y1[j]))
 
         draw_testingboxes(image, bbox)
+    '''
             
     return roi_arr
 
@@ -396,7 +401,7 @@ def smooth_frame_pairs(frame_catch_pairs, colorDict):
             #Check if next frame is close
             if(diff < max_diff):
                 color_ids = []
-                for i in range(num_clrs):
+                for k in range(num_clrs):
                     color_ids.append([])
                 tmp_frames = frame_catch_pairs[i:]
                 nxt_i = i
@@ -444,12 +449,12 @@ def default_colorDict():
     valOffset = 100
 
     #BGR Values for each color tested
-    yellowBGR = np.uint8([[[ 81, 205, 217]]])
-    redBGR    = np.uint8([[[ 78,  87, 206]]])
-    blueBGR   = np.uint8([[[197, 137,  40]]])
-    greenBGR  = np.uint8([[[101, 141,  67]]])
+    yellowBGR = np.uint8([[[ 98, 207, 222]]])
+    redBGR    = np.uint8([[[ 92,  85, 177]]])
+    blueBGR   = np.uint8([[[180, 131,  69]]])
+    greenBGR  = np.uint8([[[105, 135,  72]]])
     orangeBGR = np.uint8([[[ 84, 136, 227]]])
-    purpleBGR = np.uint8([[[142,  72,  72]]])
+    purpleBGR = np.uint8([[[156,  92,  82]]])
 
 
     colorListBGR = [yellowBGR, redBGR, blueBGR, greenBGR, orangeBGR, purpleBGR]
@@ -467,6 +472,9 @@ def default_colorDict():
         hsv = colorListHSVTmp[i][0][0]
         upper = (hsv[0] + hueOffset, hsv[1] + satOffset, hsv[2] + valOffset)
         lower = (hsv[0] - hueOffset, hsv[1] - satOffset, hsv[2] - valOffset)
+        if (upper[0] > 180):
+            upper = (upper[0] - 180, hsv[1] - satOffset, hsv[2] - valOffset)
+            lower = (lower[0], hsv[1] + satOffset, hsv[2] + valOffset)
         colorListHSV.append([upper, lower])
 
 
@@ -487,9 +495,7 @@ def default_colorDict():
 def generateDynColorDict(groundtruths_path, clr_offs, args):
     dataset = LoadImages(args.source, img_size=args.img_size)
     frame_num = 0
-    bbox_offset = -1
-    cross_size = 10
-    #view_gt = False
+    arr_size = 10
     static_colorDict = default_colorDict()
 
     print("\nAssigning Colors to IDs")
@@ -509,7 +515,7 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
             idx = bbox[4]
             for ball in Ball_list:
                 if ball.isID(idx):
-                    img_data = get_roi_colors(im0, bbox, bbox_offset, cross_size, False)
+                    img_data = create_grid(im0, bbox, arr_size, False)
                     ball.get_colors(img_data, static_colorDict)
 
         if (frame_num == 10):
@@ -519,27 +525,14 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
             frame_num += 1
 
 
-    #For each ball in Ball_list, find max detected color out of all the balls
-    det_clr = []
-    Ball_list_tmp = []
-    for i in range(len(Ball_list)):
-        max_val = 0
-        for ball in Ball_list:
-            clr, val = ball.get_max_clr(det_clr)
-            if (val > max_val):
-                max_ball = ball
-                max_clr = clr
+    #For each ball in Ball_list, find max detected color out of all the balls and colors
+    Ball_list = assign_colors(Ball_list)
 
-        max_ball.color = max_clr
-        det_clr.append(max_clr)
-        Ball_list_tmp.append(max_ball)
-        Ball_list.remove(max_ball)
-
-    Ball_list = Ball_list_tmp
 
     #For each ball in Ball_list, update target color
     frame_num = 0
-    print("\n\nAssigning Colors to Balls\n")
+    dataset.frame = frame_num
+    print("\n\nAssigning Colors to Balls")
     for _, _, im0, _ in dataset:
         img_h, img_w, _ = im0.shape
         groundtruths = load_labels(groundtruths_path, img_w, img_h, frame_num)
@@ -552,7 +545,7 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
             idx = bbox[4]
             for ball in Ball_list:
                 if ball.isID(idx):
-                    img_data = get_roi_colors(im0, bbox, bbox_offset, cross_size, False)
+                    img_data = create_grid(im0, bbox, arr_size, False)
                     ball.update_color(img_data, static_colorDict)
 
         if (frame_num == 10):
@@ -566,7 +559,7 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
     for ball in Ball_list:
         ball.finalize_target_color()
    
-    dyn_colorDict = create_dyn_dict(clr_offs, Ball_list)
+    dyn_colorDict = create_dyn_dict(clr_offs, Ball_list, static_colorDict)
 
     print('\nDynamic Dictionary Created...\n')
     return dyn_colorDict
@@ -574,7 +567,7 @@ def generateDynColorDict(groundtruths_path, clr_offs, args):
 
 
 
-def create_dyn_dict(offsets, Ball_list):
+def create_dyn_dict(offsets, Ball_list, static_colorDict):
     hueOffset = offsets[0]
     satOffset = offsets[1]
     valOffset = offsets[2]
@@ -582,13 +575,18 @@ def create_dyn_dict(offsets, Ball_list):
 
     #Create ranges for color
     for ball in Ball_list:
-        hsv = ball.color_val
-        upper = np.asarray((hsv[0] + hueOffset, hsv[1] + satOffset, hsv[2] + valOffset), dtype=np.int16)
-        lower = np.asarray((hsv[0] - hueOffset, hsv[1] - satOffset, hsv[2] - valOffset), dtype=np.int16)
-        dyn_colorDict[ball.color] = [upper, lower, ball.id]
+        if ball.color == "red":
+            dyn_colorDict["red"] = [np.asarray((5,255,255), dtype=np.int16), np.asarray((175,255,255), dtype=np.int16), ball.id]
+        else:
+            if ball.color_val == "NULL":
+                dyn_colorDict[ball.color] = [np.asarray(static_colorDict[ball.color][0], dtype=np.int16), np.asarray(static_colorDict[ball.color][1], dtype=np.int16), ball.id]
+            else:
+                hsv = ball.color_val
+                upper = np.asarray((hsv[0] + hueOffset, hsv[1] + satOffset, hsv[2] + valOffset), dtype=np.int16)
+                lower = np.asarray((hsv[0] - hueOffset, hsv[1] - satOffset, hsv[2] - valOffset), dtype=np.int16)
+                dyn_colorDict[ball.color] = [upper, lower, ball.id]
 
     return dyn_colorDict
-
 
 
 
