@@ -39,7 +39,6 @@ class Ball:
                 tmp = (img_data>=colorDict[color][1]) == (img_data<=colorDict[color][0])
                 self.color_counts[color] = np.count_nonzero(tmp.all(axis=-1)) + self.color_counts[color]
         return
-
     
                         
     def get_max_clr(self, det_clrs):
@@ -76,6 +75,8 @@ class Ball:
 
     def get_detected_bbox_color(self):
         return [self.color, self.bbox[0], self.bbox[1]]
+
+
 
 
 #Input Functions for Sample Solution
@@ -118,7 +119,6 @@ def load_labels(file_name, image_width, image_height, frame_number=-1):
     frame = current_file_data[(current_file_data["Frame"]==frame_number)]
     pt_frame = torch.tensor(frame[["Class","ID","X","Y","Width","Height"]].values)
     return pt_frame
-
 
 
 
@@ -364,12 +364,12 @@ def update_dict_pairs(frame_num, collisions, frame_catch_pairs, ball_person_pair
 
 
 
-def write_catches(output_path, frame_catch_pairs, colorDict):
+def write_catches(output_path, frame_catch_pairs, colorDict, colorOrder):
     with open(output_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_MINIMAL)
-        possible_clrs = colorDict.keys()
-        ball_ids = [colorDict[color][2] for color in possible_clrs]
-        ball_ids.sort()
+        ball_ids = []
+        for color in colorOrder:
+            ball_ids.append(colorDict[color][2])
         ball_ids.insert(0, "frame")
         writer.writerow(ball_ids)
         frame_catch_pairs = smooth_frame_pairs(frame_catch_pairs, colorDict)
