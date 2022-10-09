@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Hu"
+  given-names: "Xiao"
+  orcid: "https://orcid.org/0000-0003-1128-4099"
+- family-names: "Kocher"
+  given-names: "Ayden"
+  orcid: "https://orcid.org/0000-0000-0000-0000"
+- family-names: "Jiao"
+  given-names: "Ziteng"
+title: "21LPCVC-UAV_VIdeo_Track-Sample-Solution"
+version: 1.0.0
+doi: 10.5281/zenodo.1234
+date-released: 2021-08-09
+url: "https://github.com/lpcvai/21LPCVC-UAV_VIdeo_Track-Sample-Solution"
